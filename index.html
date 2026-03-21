@@ -67,21 +67,35 @@
         let initSuccess = false;
 
         async function init() {
+            // 等待 SDK 加载
+            let waitCount = 0;
+            while (typeof cloudbase === 'undefined' && waitCount < 30) {
+                await new Promise(r => setTimeout(r, 200));
+                waitCount++;
+            }
             if (typeof cloudbase === 'undefined') {
-                document.getElementById('errorMsg').innerText = 'SDK 加载失败，请刷新重试';
+                document.getElementById('errorMsg').innerText = 'SDK 加载失败，请刷新页面重试';
                 return;
             }
             try {
+                // 显式指定区域，避免环境检测错误
                 const app = cloudbase.init({ env: ENV_ID, region: 'ap-shanghai' });
                 db = app.database();
+                // 测试连接
                 await db.collection('sales').limit(1).get();
                 initSuccess = true;
                 document.getElementById('loginBtn').disabled = false;
                 document.getElementById('infoMsg').innerText = '✅ 系统已就绪，可以登录';
                 setTimeout(() => { document.getElementById('infoMsg').innerText = ''; }, 3000);
             } catch (err) {
-                console.error(err);
-                document.getElementById('errorMsg').innerText = '初始化失败：' + (err.message || '请检查安全域名和网络');
+                console.error('初始化失败', err);
+                let msg = err.message || '';
+                if (msg.includes('scope')) {
+                    msg = '请检查安全域名配置：控制台 → 安全配置 → 安全域名，添加 hpinbo.github.io';
+                } else {
+                    msg = '初始化失败：' + msg;
+                }
+                document.getElementById('errorMsg').innerText = msg;
                 document.getElementById('loginBtn').disabled = true;
             }
         }
@@ -101,7 +115,7 @@
             btn.disabled = true;
             btn.innerText = '登录中...';
             try {
-                const res = await db.collection('sales').where({ phone, password: pwd }).get();
+                const res = await db.collection('sales').where({ phone: phone, password: pwd }).get();
                 if (res.data.length > 0) {
                     const sales = res.data[0];
                     localStorage.setItem('salesId', sales.salesId);

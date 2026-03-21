@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>管理员后台</title>
+    <title>砚拓·管理员后台</title>
+    <!-- 使用官方稳定版 SDK -->
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
@@ -32,6 +33,7 @@
             cursor: pointer;
             font-size: 0.8rem;
         }
+        button:disabled { background: #95a5a6; cursor: not-allowed; }
         .toast {
             position: fixed;
             bottom: 30px;
@@ -45,10 +47,12 @@
             display: none;
             z-index: 2000;
         }
+        .error-msg { color: #e74c3c; text-align: center; margin: 20px; }
+        .loading { text-align: center; padding: 40px; color: #7f8c8d; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContainer" style="display: none;">
         <div class="card">
             <h2>🔧 管理员控制台</h2>
             <div style="text-align: right;">
@@ -64,9 +68,9 @@
             <div style="overflow-x: auto;">
                 <table id="salesTable">
                     <thead>
-                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th>
+                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th></tr>
                     </thead>
-                    <tbody id="salesList"></tbody>
+                    <tbody id="salesList"><tr><td colspan="7" class="loading">加载中...</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -75,19 +79,21 @@
             <div style="overflow-x: auto;">
                 <table id="allCustomersTable">
                     <thead>
-                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th>
+                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th></tr>
                     </thead>
-                    <tbody id="allCustomersList"></tbody>
+                    <tbody id="allCustomersList"><tr><td colspan="7" class="loading">加载中...</td></tr></tbody>
                 </table>
             </div>
             <button onclick="exportCSV()" style="margin-top: 16px;">📎 导出CSV</button>
         </div>
     </div>
+    <div id="errorContainer" class="error-msg" style="display: none;"></div>
     <div id="toast" class="toast"></div>
 
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
         let db = null;
+        let initSuccess = false;
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -96,58 +102,84 @@
             setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
-        window.addEventListener('load', async function() {
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorContainer');
+            errorDiv.innerText = msg;
+            errorDiv.style.display = 'block';
+            document.getElementById('mainContainer').style.display = 'none';
+        }
+
+        // 初始化云开发
+        async function initCloud() {
             if (typeof cloudbase === 'undefined') {
-                alert('SDK 加载失败，请刷新重试');
-                return;
+                showError('SDK 加载失败，请刷新页面重试');
+                return false;
             }
-            const app = cloudbase.init({ env: ENV_ID });
-            db = app.database();
-
-            const salesId = localStorage.getItem('salesId');
-            if (salesId !== 'admin') {
-                window.location.href = 'login.html';
-                return;
-            }
-            await loadData();
-        });
-
-        async function loadData() {
             try {
-                const [salesRes, customersRes] = await Promise.all([
-                    db.collection('sales').get(),
-                    db.collection('customers').get()
-                ]);
+                const app = cloudbase.init({ env: ENV_ID });
+                db = app.database();
+                // 测试连接
+                await db.collection('sales').limit(1).get();
+                initSuccess = true;
+                return true;
+            } catch (err) {
+                console.error('初始化失败', err);
+                let errorMsg = '数据库初始化失败：';
+                if (err.message && err.message.includes('env')) errorMsg += '环境ID错误，请检查';
+                else if (err.message && err.message.includes('permission')) errorMsg += '权限不足，请检查安全域名或数据库权限';
+                else errorMsg += err.message || '未知错误';
+                showError(errorMsg);
+                return false;
+            }
+        }
+
+        // 加载数据
+        async function loadData() {
+            if (!db) return;
+            try {
+                // 获取所有销售员（排除管理员）
+                const salesRes = await db.collection('sales').get();
                 const sales = salesRes.data.filter(s => s.salesId !== 'admin');
+                // 获取所有商家
+                const customersRes = await db.collection('customers').get();
                 const customers = customersRes.data;
 
+                // 统计每个销售员的商家数
                 const countMap = new Map();
                 customers.forEach(c => countMap.set(c.salesId, (countMap.get(c.salesId) || 0) + 1));
 
-                const tbody = document.getElementById('salesList');
-                tbody.innerHTML = sales.map(s => `
-                    <tr>
-                        <td>${s.salesId}</td>
-                        <td>${s.name}</td>
-                        <td>${s.phone}</td>
-                        <td>${s.level === 1 ? '一级（市）' : s.level === 2 ? '二级（区县）' : '三级（街道）'}</td>
-                        <td>${s.parentId || '-'}</td>
-                        <td>${countMap.get(s.salesId) || 0}</td>
-                        <td><button onclick="resetPassword('${s.salesId}')">重置密码</button></td>
-                    </tr>
-                `).join('');
+                // 渲染销售员表格
+                const salesTbody = document.getElementById('salesList');
+                if (sales.length === 0) {
+                    salesTbody.innerHTML = '<tr><td colspan="7">暂无销售员数据</td></tr>';
+                } else {
+                    salesTbody.innerHTML = sales.map(s => `
+                        <tr>
+                            <td>${s.salesId}</td>
+                            <td>${s.name}</td>
+                            <td>${s.phone}</td>
+                            <td>${s.level === 1 ? '一级（市）' : s.level === 2 ? '二级（区县）' : '三级（街道）'}</td>
+                            <td>${s.parentId || '-'}</td>
+                            <td>${countMap.get(s.salesId) || 0}</td>
+                            <td><button onclick="resetPassword('${s.salesId}')">重置密码</button></td>
+                        </tr>
+                    `).join('');
+                }
 
+                // 整体统计
                 const levelCount = {1:0,2:0,3:0};
                 sales.forEach(s => levelCount[s.level]++);
                 const totalCustomers = customers.length;
-                document.getElementById('stats').innerHTML = `
+                const statsHtml = `
                     <div class="stat-card"><div class="stat-number">${sales.length}</div><div>总销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${levelCount[1] || 0}</div><div>一级销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${levelCount[2] || 0}</div><div>二级销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${levelCount[3] || 0}</div><div>三级销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${totalCustomers}</div><div>总商家数</div></div>
                 `;
+                document.getElementById('stats').innerHTML = statsHtml;
 
+                // 渲染商家表格
                 const salesMap = new Map();
                 sales.forEach(s => salesMap.set(s.salesId, s.name));
                 const customerRows = customers.map(c => `
@@ -161,13 +193,14 @@
                         <td>${new Date(c.createdAt).toLocaleString()}</td>
                     </tr>
                 `).join('');
-                document.getElementById('allCustomersList').innerHTML = customerRows || '<tr><td colspan="7">暂无数据</td></tr>';
+                document.getElementById('allCustomersList').innerHTML = customerRows || '<tr><td colspan="7">暂无商家数据</td></tr>';
             } catch (err) {
                 console.error(err);
-                showToast('加载失败，请刷新重试');
+                showToast('加载数据失败，请刷新重试');
             }
         }
 
+        // 重置密码
         async function resetPassword(salesId) {
             const newPwd = prompt('请输入新密码（默认123456）', '123456');
             if (newPwd === null) return;
@@ -178,10 +211,12 @@
                     showToast('密码已重置');
                 }
             } catch (err) {
+                console.error(err);
                 showToast('操作失败');
             }
         }
 
+        // 导出CSV
         function exportCSV() {
             const table = document.getElementById('allCustomersList');
             const rows = table.querySelectorAll('tr');
@@ -208,6 +243,20 @@
             localStorage.clear();
             window.location.href = 'login.html';
         }
+
+        // 页面启动
+        (async () => {
+            const ok = await initCloud();
+            if (!ok) return;
+            // 验证登录身份
+            const salesId = localStorage.getItem('salesId');
+            if (salesId !== 'admin') {
+                showError('无权访问，请使用管理员账号登录');
+                return;
+            }
+            document.getElementById('mainContainer').style.display = 'block';
+            await loadData();
+        })();
     </script>
 </body>
 </html>

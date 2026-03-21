@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>管理员后台</title>
-    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <title>砚拓·管理员后台</title>
+    <script src="https://unpkg.com/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body { background: #f5f7fa; padding: 20px; }
@@ -98,14 +98,23 @@
 
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
-        const app = cloud.init({ env: ENV_ID });
-        const db = app.database();
+        let db = null;
 
-        // 检查登录
-        const salesId = localStorage.getItem('salesId');
-        if (salesId !== 'admin') {
-            window.location.href = 'login.html';
-        }
+        window.addEventListener('DOMContentLoaded', async function() {
+            if (typeof cloud === 'undefined') {
+                alert('系统初始化失败，请刷新页面重试');
+                return;
+            }
+            const app = cloud.init({ env: ENV_ID });
+            db = app.database();
+
+            const salesId = localStorage.getItem('salesId');
+            if (salesId !== 'admin') {
+                window.location.href = 'login.html';
+                return;
+            }
+            await loadData();
+        });
 
         async function loadData() {
             try {
@@ -116,13 +125,9 @@
                 const sales = salesRes.data.filter(s => s.salesId !== 'admin');
                 const customers = customersRes.data;
 
-                // 统计每个销售员的商家数
                 const countMap = new Map();
-                customers.forEach(c => {
-                    countMap.set(c.salesId, (countMap.get(c.salesId) || 0) + 1);
-                });
+                customers.forEach(c => countMap.set(c.salesId, (countMap.get(c.salesId) || 0) + 1));
 
-                // 渲染销售员列表
                 const tbody = document.getElementById('salesList');
                 tbody.innerHTML = sales.map(s => `
                     <tr>
@@ -136,7 +141,6 @@
                     </tr>
                 `).join('');
 
-                // 整体统计
                 const levelCount = {1:0,2:0,3:0};
                 sales.forEach(s => levelCount[s.level]++);
                 const totalCustomers = customers.length;
@@ -149,7 +153,6 @@
                 `;
                 document.getElementById('stats').innerHTML = statsHtml;
 
-                // 渲染所有商家
                 const salesMap = new Map();
                 sales.forEach(s => salesMap.set(s.salesId, s.name));
                 const customerRows = customers.map(c => `
@@ -185,7 +188,6 @@
         }
 
         function exportCSV() {
-            // 导出所有商家为CSV
             const table = document.getElementById('allCustomersList');
             const rows = table.querySelectorAll('tr');
             let csv = '店名,地址,电话,类目,备注,录入销售员,录入时间\n';
@@ -218,8 +220,6 @@
             localStorage.clear();
             window.location.href = 'login.html';
         }
-
-        loadData();
     </script>
 </body>
 </html>

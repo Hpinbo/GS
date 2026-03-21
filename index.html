@@ -66,42 +66,23 @@
         let db = null;
         let initSuccess = false;
 
-        function showInfo(msg) {
-            const infoDiv = document.getElementById('infoMsg');
-            infoDiv.innerText = msg;
-            setTimeout(() => { infoDiv.innerText = ''; }, 3000);
-        }
-
-        function setLoginButton(disabled, text) {
-            const btn = document.getElementById('loginBtn');
-            btn.disabled = disabled;
-            if (text) btn.innerText = text;
-            else btn.innerText = '登录';
-        }
-
-        async function initCloud() {
-            // 等待 SDK 加载
+        async function init() {
             if (typeof cloudbase === 'undefined') {
-                await new Promise(resolve => {
-                    const check = setInterval(() => {
-                        if (typeof cloudbase !== 'undefined') {
-                            clearInterval(check);
-                            resolve();
-                        }
-                    }, 100);
-                });
+                document.getElementById('errorMsg').innerText = 'SDK 加载失败，请刷新重试';
+                return;
             }
             try {
-                const app = cloudbase.init({ env: ENV_ID });
+                const app = cloudbase.init({ env: ENV_ID, region: 'ap-shanghai' });
                 db = app.database();
                 await db.collection('sales').limit(1).get();
                 initSuccess = true;
-                setLoginButton(false);
-                showInfo('✅ 系统已就绪，可以登录');
+                document.getElementById('loginBtn').disabled = false;
+                document.getElementById('infoMsg').innerText = '✅ 系统已就绪，可以登录';
+                setTimeout(() => { document.getElementById('infoMsg').innerText = ''; }, 3000);
             } catch (err) {
                 console.error(err);
-                document.getElementById('errorMsg').innerText = '初始化失败：' + (err.message || '请检查安全域名和数据库权限');
-                setLoginButton(true, '初始化失败');
+                document.getElementById('errorMsg').innerText = '初始化失败：' + (err.message || '请检查安全域名和网络');
+                document.getElementById('loginBtn').disabled = true;
             }
         }
 
@@ -116,9 +97,11 @@
                 document.getElementById('errorMsg').innerText = '请输入手机号和密码';
                 return;
             }
-            setLoginButton(true, '登录中...');
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.innerText = '登录中...';
             try {
-                const res = await db.collection('sales').where({ phone: phone, password: pwd }).get();
+                const res = await db.collection('sales').where({ phone, password: pwd }).get();
                 if (res.data.length > 0) {
                     const sales = res.data[0];
                     localStorage.setItem('salesId', sales.salesId);
@@ -131,16 +114,18 @@
                     }
                 } else {
                     document.getElementById('errorMsg').innerText = '账号或密码错误';
-                    setLoginButton(false);
+                    btn.disabled = false;
+                    btn.innerText = '登录';
                 }
             } catch (err) {
                 console.error(err);
                 document.getElementById('errorMsg').innerText = '登录失败，请检查网络';
-                setLoginButton(false);
+                btn.disabled = false;
+                btn.innerText = '登录';
             }
         }
 
-        window.addEventListener('load', initCloud);
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>

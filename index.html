@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>砚拓·销售系统登录</title>
-    <!-- 使用与好评网站相同的稳定旧版 SDK 1.14.0 -->
-    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <!-- 使用你确认可用的 SDK 地址 -->
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body {
@@ -86,35 +86,33 @@
 
         async function init() {
             setButtonEnabled(false);
-            // 等待 SDK 加载（与好评网站相同方式）
-            if (typeof cloudbase === 'undefined') {
-                await new Promise(resolve => {
-                    let count = 0;
-                    const check = setInterval(() => {
-                        if (typeof cloudbase !== 'undefined' || count > 100) {
-                            clearInterval(check);
-                            resolve();
-                        }
-                        count++;
-                    }, 100);
-                });
+            
+            // 等待 SDK 加载
+            let waitCount = 0;
+            while (typeof cloudbase === 'undefined' && waitCount < 30) {
+                await new Promise(r => setTimeout(r, 200));
+                waitCount++;
             }
+            
             if (typeof cloudbase === 'undefined') {
                 showError('SDK 加载失败，请刷新页面重试');
+                setButtonEnabled(false);
                 return;
             }
+            
             try {
                 const app = cloudbase.init({ env: ENV_ID });
                 db = app.database();
-                // 测试连接（与好评网站完全相同）
-                const testRes = await db.collection('sales').limit(1).get();
+                // 测试连接
+                await db.collection('sales').limit(1).get();
                 isReady = true;
                 setButtonEnabled(true);
                 showInfo('✅ 系统已就绪，可以登录');
-                console.log('测试查询结果:', testRes);
             } catch (err) {
-                console.error('初始化错误:', err);
-                showError('初始化失败：' + (err.message || '请检查安全域名和数据库权限'));
+                console.error(err);
+                let msg = err.message || '初始化失败';
+                if (msg.includes('scope')) msg = '请检查安全域名配置';
+                showError('初始化失败：' + msg);
                 setButtonEnabled(false);
             }
         }

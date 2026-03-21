@@ -70,14 +70,14 @@
 <body>
     <div class="container" id="mainContainer" style="display: none;">
         <div class="card">
-            <h2>👤 欢迎，<span id="salesName"></span>（<span id="levelName"></span>级销售员）</h2>
+            <h2>欢迎，<span id="salesName"></span>（<span id="levelName"></span>级销售员）</h2>
             <div style="text-align: right;">
-                <button onclick="logout()">退出登录</button>
+                <button onclick="window.logout()">退出登录</button>
             </div>
         </div>
 
         <div class="card">
-            <h2>📝 录入商家信息</h2>
+            <h2>录入商家信息</h2>
             <form id="customerForm">
                 <div class="form-group">
                     <label>店名 *</label>
@@ -109,14 +109,14 @@
                     <label>备注</label>
                     <textarea id="remark" rows="2"></textarea>
                 </div>
-                <button type="submit" class="btn-primary">✓ 提交商家信息</button>
+                <button type="submit" class="btn-primary">提交商家信息</button>
             </form>
         </div>
 
         <div class="card">
-            <h2>📱 商家自助填表二维码</h2>
+            <h2>商家自助填表二维码</h2>
             <p>商家扫码后可直接填写信息，自动归入您的名下。</p>
-            <button onclick="generateQR()">生成我的专属二维码</button>
+            <button onclick="window.generateQR()">生成我的专属二维码</button>
             <div id="qrCodeResult" class="qr-code">
                 <div id="qrCodeImg"></div>
                 <div class="link-text" id="formLink"></div>
@@ -124,7 +124,7 @@
         </div>
 
         <div class="card" id="addSubordinatePanel" style="display:none;">
-            <h2>👥 发展下级销售员</h2>
+            <h2>发展下级销售员</h2>
             <form id="subordinateForm">
                 <div class="form-group">
                     <label>姓名</label>
@@ -139,10 +139,6 @@
                     <input type="password" id="subPassword" value="123456" required>
                 </div>
                 <div class="form-group">
-                    <label id="regionLabel">区域名称</label>
-                    <input type="text" id="subRegion" placeholder="请填写区域名称" required>
-                </div>
-                <div class="form-group" id="levelSelectGroup">
                     <label>级别</label>
                     <select id="subLevel" required>
                         <option value="">请选择</option>
@@ -153,7 +149,7 @@
         </div>
 
         <div class="card">
-            <h2>📊 业绩统计</h2>
+            <h2>业绩统计</h2>
             <div id="statsInfo" style="margin-bottom: 16px; font-weight: bold;"></div>
             <div style="overflow-x: auto;">
                 <table id="customerTable">
@@ -169,43 +165,45 @@
 
     <script>
         (function() {
-            const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
-            let db = null;
-            let isCloudReady = false;
-            let currentSales = null;
+            var CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
+            var db = null;
+            var isCloudReady = false;
+            var currentSales = null;
 
             function showToast(msg) {
-                const toast = document.getElementById('toast');
+                var toast = document.getElementById('toast');
                 toast.textContent = msg;
                 toast.style.display = 'block';
-                setTimeout(() => { toast.style.display = 'none'; }, 3000);
+                setTimeout(function() {
+                    toast.style.display = 'none';
+                }, 3000);
             }
 
             async function initCloud() {
                 try {
-                    const app = cloudbase.init({ env: CLOUD_ENV });
+                    var app = cloudbase.init({ env: CLOUD_ENV });
                     await app.auth().signInAnonymously();
                     db = app.database();
                     isCloudReady = true;
-                    console.log('✅ 云数据库初始化成功');
+                    console.log('云数据库初始化成功');
                 } catch (err) {
-                    console.error('❌ 云数据库初始化失败', err);
+                    console.error('云数据库初始化失败', err);
                     alert('初始化失败：' + (err.message || '请检查环境ID或匿名登录是否开启'));
                     isCloudReady = false;
                 }
             }
 
             function checkLogin() {
-                const id = localStorage.getItem('salesId');
-                const name = localStorage.getItem('salesName');
-                const level = localStorage.getItem('salesLevel');
+                var id = localStorage.getItem('salesId');
+                var name = localStorage.getItem('salesName');
+                var level = localStorage.getItem('salesLevel');
                 if (!id) {
                     window.location.href = 'index.html';
                     return false;
                 }
-                currentSales = { id, name, level: parseInt(level) };
+                currentSales = { id: id, name: name, level: parseInt(level) };
                 document.getElementById('salesName').innerText = currentSales.name;
-                const levelNames = {1:'一',2:'二',3:'三'};
+                var levelNames = {1:'一',2:'二',3:'三'};
                 document.getElementById('levelName').innerText = levelNames[currentSales.level];
                 return true;
             }
@@ -214,26 +212,23 @@
                 if (!db || !isCloudReady) return;
                 if (currentSales.level === 1 || currentSales.level === 2) {
                     document.getElementById('addSubordinatePanel').style.display = 'block';
-                    const subLevelSelect = document.getElementById('subLevel');
-                    const regionLabel = document.getElementById('regionLabel');
+                    var subLevelSelect = document.getElementById('subLevel');
                     if (currentSales.level === 1) {
-                        subLevelSelect.innerHTML = '<option value="2">二级销售员（区县）</option>';
-                        regionLabel.innerText = '区域名称（如：西湖区）';
-                    } else if (currentSales.level === 2) {
-                        subLevelSelect.innerHTML = '<option value="3">三级销售员（街道）</option>';
-                        regionLabel.innerText = '区域名称（如：文新街道）';
+                        subLevelSelect.innerHTML = '<option value="">请选择</option><option value="2">二级销售员（区县）</option><option value="3">三级销售员（街道）</option>';
+                    } else {
+                        subLevelSelect.innerHTML = '<option value="">请选择</option><option value="3">三级销售员（街道）</option>';
                     }
-                    subLevelSelect.disabled = true; // 让用户不用选择，但为了提交，我们自动赋值
                 }
                 await loadCustomers();
             }
 
             async function getSubordinateIds() {
-                const allSalesRes = await db.collection('sales').get();
-                const allSales = allSalesRes.data;
-                const subordinates = [];
+                var allSalesRes = await db.collection('sales').get();
+                var allSales = allSalesRes.data;
+                var subordinates = [];
                 function collect(parentId) {
-                    for (let s of allSales) {
+                    for (var i = 0; i < allSales.length; i++) {
+                        var s = allSales[i];
                         if (s.parentId === parentId) {
                             subordinates.push(s.salesId);
                             collect(s.salesId);
@@ -248,26 +243,32 @@
             async function loadCustomers() {
                 if (!db) return;
                 try {
-                    let customers = [];
+                    var customers = [];
                     if (currentSales.level === 1) {
-                        const subordinates = await getSubordinateIds();
-                        const allCustomers = await db.collection('customers').get();
-                        customers = allCustomers.data.filter(c => subordinates.includes(c.salesId));
+                        var subordinates = await getSubordinateIds();
+                        var allCustomers = await db.collection('customers').get();
+                        customers = allCustomers.data.filter(function(c) {
+                            return subordinates.indexOf(c.salesId) !== -1;
+                        });
                     } else if (currentSales.level === 2) {
-                        const allSales = await db.collection('sales').get();
-                        const subordinates = [];
-                        for (let s of allSales.data) {
-                            if (s.parentId === currentSales.id) subordinates.push(s.salesId);
+                        var allSales = await db.collection('sales').get();
+                        var subordinates = [];
+                        for (var i = 0; i < allSales.data.length; i++) {
+                            if (allSales.data[i].parentId === currentSales.id) {
+                                subordinates.push(allSales.data[i].salesId);
+                            }
                         }
                         subordinates.push(currentSales.id);
-                        const allCustomers = await db.collection('customers').get();
-                        customers = allCustomers.data.filter(c => subordinates.includes(c.salesId));
+                        var allCustomers = await db.collection('customers').get();
+                        customers = allCustomers.data.filter(function(c) {
+                            return subordinates.indexOf(c.salesId) !== -1;
+                        });
                     } else {
-                        const res = await db.collection('customers').where({ salesId: currentSales.id }).get();
+                        var res = await db.collection('customers').where({ salesId: currentSales.id }).get();
                         customers = res.data;
                     }
                     renderCustomers(customers);
-                    document.getElementById('statsInfo').innerHTML = `总录入商家数：${customers.length}`;
+                    document.getElementById('statsInfo').innerHTML = '总录入商家数：' + customers.length;
                 } catch (err) {
                     console.error(err);
                     showToast('加载商家列表失败');
@@ -275,51 +276,60 @@
             }
 
             async function renderCustomers(customers) {
-                const salesMap = new Map();
-                const allSales = await db.collection('sales').get();
-                allSales.data.forEach(s => salesMap.set(s.salesId, s.name));
-                const tbody = document.getElementById('customerList');
+                var salesMap = new Map();
+                var allSales = await db.collection('sales').get();
+                for (var i = 0; i < allSales.data.length; i++) {
+                    salesMap.set(allSales.data[i].salesId, allSales.data[i].name);
+                }
+                var tbody = document.getElementById('customerList');
                 if (customers.length === 0) {
                     tbody.innerHTML = '……
                     return;
                 }
-                tbody.innerHTML = customers.map(c => `
-                    <tr>
-                        <td>${escapeHtml(c.shopName)}</td>
-                        <td>${escapeHtml(c.address)}</td>
-                        <td>${escapeHtml(c.phone)}</td>
-                        <td>${escapeHtml(c.category)}</td>
-                        <td>${escapeHtml(c.remark || '')}</td>
-                        <td>${new Date(c.createdAt).toLocaleString()}</td>
-                        <td>${escapeHtml(salesMap.get(c.salesId) || c.salesId)}</td>
-                    ……
-                `).join('');
+                var html = '';
+                for (var i = 0; i < customers.length; i++) {
+                    var c = customers[i];
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
+                }
+                tbody.innerHTML = html;
             }
 
-            document.getElementById('customerForm').addEventListener('submit', async (e) => {
+            document.getElementById('customerForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                const shopName = document.getElementById('shopName').value.trim();
-                const address = document.getElementById('address').value.trim();
-                const phone = document.getElementById('phone').value.trim();
-                let category = document.getElementById('category').value;
-                const customInput = document.getElementById('customCategory');
+                if (!isCloudReady) { showToast('系统未就绪'); return; }
+                var shopName = document.getElementById('shopName').value.trim();
+                var address = document.getElementById('address').value.trim();
+                var phone = document.getElementById('phone').value.trim();
+                var category = document.getElementById('category').value;
+                var customInput = document.getElementById('customCategory');
                 if (category === '其他') {
-                    const custom = customInput.value.trim();
+                    var custom = customInput.value.trim();
                     if (!custom) { showToast('请填写具体类目'); return; }
                     category = custom;
                 }
-                const remark = document.getElementById('remark').value.trim();
+                var remark = document.getElementById('remark').value.trim();
                 if (!shopName || !address || !phone) {
                     showToast('请填写所有带 * 的字段');
                     return;
                 }
                 try {
                     await db.collection('customers').add({
-                        shopName, address, phone, category, remark,
+                        shopName: shopName,
+                        address: address,
+                        phone: phone,
+                        category: category,
+                        remark: remark,
                         salesId: currentSales.id,
                         createdAt: new Date().toISOString()
                     });
-                    showToast('✅ 商家信息已保存');
+                    showToast('商家信息已保存');
                     document.getElementById('customerForm').reset();
                     document.getElementById('category').value = '';
                     document.getElementById('customCategoryGroup').style.display = 'none';
@@ -331,43 +341,43 @@
             });
 
             function generateQR() {
-                const formUrl = `${window.location.origin}/customer_form.html?salesId=${currentSales.id}`;
-                document.getElementById('formLink').innerHTML = `<a href="${formUrl}" target="_blank">${formUrl}</a>`;
-                const img = document.createElement('img');
-                img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(formUrl)}`;
+                var formUrl = window.location.origin + '/customer_form.html?salesId=' + currentSales.id;
+                document.getElementById('formLink').innerHTML = '<a href="' + formUrl + '" target="_blank">' + formUrl + '</a>';
+                var img = document.createElement('img');
+                img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(formUrl);
                 document.getElementById('qrCodeImg').innerHTML = '';
                 document.getElementById('qrCodeImg').appendChild(img);
                 document.getElementById('qrCodeResult').style.display = 'block';
             }
 
-            document.getElementById('subordinateForm').addEventListener('submit', async (e) => {
+            document.getElementById('subordinateForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                const name = document.getElementById('subName').value.trim();
-                const phone = document.getElementById('subPhone').value.trim();
-                const password = document.getElementById('subPassword').value.trim();
-                const regionName = document.getElementById('subRegion').value.trim();
-                let level;
-                if (currentSales.level === 1) level = 2;
-                else if (currentSales.level === 2) level = 3;
-                else return;
-                if (!name || !phone || !password || !regionName) {
+                if (!isCloudReady) { showToast('系统未就绪'); return; }
+                var name = document.getElementById('subName').value.trim();
+                var phone = document.getElementById('subPhone').value.trim();
+                var password = document.getElementById('subPassword').value.trim();
+                var level = parseInt(document.getElementById('subLevel').value);
+                if (!name || !phone || !password || !level) {
                     showToast('请填写完整信息');
                     return;
                 }
-                const exist = await db.collection('sales').where({ phone }).get();
+                var exist = await db.collection('sales').where({ phone: phone }).get();
                 if (exist.data.length > 0) {
                     showToast('该手机号已注册');
                     return;
                 }
-                const salesId = Date.now().toString();
+                var salesId = Date.now().toString();
                 try {
                     await db.collection('sales').add({
-                        salesId, name, phone, password, level,
-                        regionName,
+                        salesId: salesId,
+                        name: name,
+                        phone: phone,
+                        password: password,
+                        level: level,
                         parentId: currentSales.id,
                         createdAt: new Date().toISOString()
                     });
-                    showToast('✅ 下级销售员添加成功');
+                    showToast('下级销售员添加成功');
                     document.getElementById('subordinateForm').reset();
                 } catch (err) {
                     console.error(err);
@@ -375,10 +385,10 @@
                 }
             });
 
-            const categorySelect = document.getElementById('category');
-            const customGroup = document.getElementById('customCategoryGroup');
-            const customInput = document.getElementById('customCategory');
-            categorySelect.addEventListener('change', () => {
+            var categorySelect = document.getElementById('category');
+            var customGroup = document.getElementById('customCategoryGroup');
+            var customInput = document.getElementById('customCategory');
+            categorySelect.addEventListener('change', function() {
                 if (categorySelect.value === '其他') {
                     customGroup.style.display = 'block';
                     customInput.required = true;
@@ -389,22 +399,15 @@
                 }
             });
 
-            function escapeHtml(str) {
-                if (!str) return '';
-                return str.replace(/[&<>]/g, function(m) {
-                    if (m === '&') return '&amp;';
-                    if (m === '<') return '&lt;';
-                    if (m === '>') return '&gt;';
-                    return m;
-                });
-            }
-
             function logout() {
                 localStorage.clear();
                 window.location.href = 'index.html';
             }
 
-            (async () => {
+            window.logout = logout;
+            window.generateQR = generateQR;
+
+            (async function() {
                 await initCloud();
                 if (!isCloudReady) return;
                 if (!checkLogin()) return;

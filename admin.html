@@ -9,13 +9,7 @@
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body { background: #f5f7fa; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-        }
+        .card { background: white; border-radius: 28px; padding: 24px; margin-bottom: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         h2 { margin-bottom: 16px; color: #1e2a3a; font-size: 1.4rem; }
         .stats { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
         .stat-card { background: #f8f9fc; border-radius: 20px; padding: 16px; min-width: 150px; }
@@ -137,6 +131,11 @@
         }
 
         async function initCloud() {
+            let wait = 0;
+            while (typeof cloudbase === 'undefined' && wait < 30) {
+                await new Promise(r => setTimeout(r, 200));
+                wait++;
+            }
             if (typeof cloudbase === 'undefined') {
                 alert('SDK 加载失败，请刷新页面重试');
                 return false;
@@ -172,9 +171,10 @@
                     salesTbody.innerHTML = sales.map(s => `
                         <tr>
                             <td>${s.salesId}${s.name}${s.phone}
-                            ${s.level === 1 ? '一级（市）' : s.level === 2 ? '二级（区县）' : '三级（街道）'}
-                            ${s.parentId || '-'}${countMap.get(s.salesId) || 0}
-                            <button onclick="resetPassword('${s.salesId}')">重置密码</button>
+                            <td>${s.level === 1 ? '一级（市）' : s.level === 2 ? '二级（区县）' : '三级（街道）'}
+                            <td>${s.parentId || '-'}
+                            <td>${countMap.get(s.salesId) || 0}
+                            <td><button onclick="resetPassword('${s.salesId}')">重置密码</button>
                         ……
                     `).join('');
                 }
@@ -195,10 +195,10 @@
                 sales.forEach(s => salesMap.set(s.salesId, s.name));
                 const customerRows = customers.map(c => `
                     <tr>
-                        ${c.shopName}${c.address}${c.phone}
-                        ${c.category}${c.remark || ''}
-                        ${salesMap.get(c.salesId) || c.salesId}
-                        ${new Date(c.createdAt).toLocaleString()}
+                        <td>${c.shopName}${c.address}${c.phone}
+                        <td>${c.category}${c.remark || ''}
+                        <td>${salesMap.get(c.salesId) || c.salesId}
+                        <td>${new Date(c.createdAt).toLocaleString()}
                     ……
                 `).join('');
                 document.getElementById('allCustomersList').innerHTML = customerRows || '……
@@ -277,9 +277,10 @@
         }
 
         function logout() {
-    localStorage.clear();
-    window.location.href = 'index.html';  // 注意改为 index.html
-}
+            localStorage.clear();
+            // 关键修改：跳转到 index.html
+            window.location.href = 'index.html';
+        }
 
         (async () => {
             const ok = await initCloud();

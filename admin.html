@@ -55,21 +55,21 @@
             font-size: 0.9rem;
         }
         .add-salesman { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
-        .add-salesman .form-group { flex: 1; min-width: 130px; margin-bottom: 0; }
+        .add-salesman .form-group { flex: 1; min-width: 150px; margin-bottom: 0; }
         .add-salesman button { margin-bottom: 0; }
     </style>
 </head>
 <body>
     <div class="container" id="mainContainer" style="display: none;">
         <div class="card">
-            <h2>🔧 管理员控制台</h2>
+            <h2>管理员控制台</h2>
             <div style="text-align: right;">
                 <button onclick="logout()">退出登录</button>
             </div>
         </div>
 
         <div class="card">
-            <h2>➕ 添加一级销售员</h2>
+            <h2>添加销售员</h2>
             <div class="add-salesman">
                 <div class="form-group">
                     <label>姓名</label>
@@ -77,37 +77,41 @@
                 </div>
                 <div class="form-group">
                     <label>手机号</label>
-                    <input type="tel" id="newPhone" placeholder="手机号（登录账号）">
+                    <input type="tel" id="newPhone" placeholder="手机号">
                 </div>
                 <div class="form-group">
                     <label>密码</label>
                     <input type="text" id="newPassword" placeholder="密码" value="123456">
                 </div>
                 <div class="form-group">
-                    <label>区域名称（如：杭州市）</label>
-                    <input type="text" id="newRegion" placeholder="一级区域名称">
+                    <label>级别</label>
+                    <select id="newLevel">
+                        <option value="1">一级销售员（市）</option>
+                        <option value="2">二级销售员（区县）</option>
+                        <option value="3">三级销售员（街道）</option>
+                    </select>
                 </div>
-                <button onclick="addSalesman()">添加销售员</button>
+                <button onclick="addSalesman()" style="margin-top: 22px;">添加销售员</button>
             </div>
         </div>
 
         <div class="card">
-            <h2>📊 整体统计</h2>
+            <h2>整体统计</h2>
             <div id="stats" class="stats"></div>
         </div>
         <div class="card">
-            <h2>👥 销售员列表</h2>
+            <h2>销售员列表</h2>
             <div style="overflow-x: auto;">
                 <table id="salesTable">
                     <thead>
-                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>区域名称</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th>……
+                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th>……
                     </thead>
                     <tbody id="salesList">……
                 ……
             </div>
         </div>
         <div class="card">
-            <h2>🏪 所有商家</h2>
+            <h2>所有商家</h2>
             <div style="overflow-x: auto;">
                 <table id="allCustomersTable">
                     <thead>
@@ -116,7 +120,7 @@
                     <tbody id="allCustomersList">……
                 ……
             </div>
-            <button onclick="exportCSV()" style="margin-top: 16px;">📎 导出CSV</button>
+            <button onclick="exportCSV()" style="margin-top: 16px;">导出CSV</button>
         </div>
     </div>
     <div id="toast" class="toast"></div>
@@ -128,21 +132,23 @@
             let isCloudReady = false;
 
             function showToast(msg) {
-                const toast = document.getElementById('toast');
+                var toast = document.getElementById('toast');
                 toast.textContent = msg;
                 toast.style.display = 'block';
-                setTimeout(() => { toast.style.display = 'none'; }, 3000);
+                setTimeout(function() {
+                    toast.style.display = 'none';
+                }, 3000);
             }
 
             async function initCloud() {
                 try {
-                    const app = cloudbase.init({ env: CLOUD_ENV });
+                    var app = cloudbase.init({ env: CLOUD_ENV });
                     await app.auth().signInAnonymously();
                     db = app.database();
                     isCloudReady = true;
-                    console.log('✅ 云数据库初始化成功');
+                    console.log('云数据库初始化成功');
                 } catch (err) {
-                    console.error('❌ 云数据库初始化失败', err);
+                    console.error('云数据库初始化失败', err);
                     alert('初始化失败：' + (err.message || '请检查环境ID或匿名登录是否开启'));
                     isCloudReady = false;
                 }
@@ -151,58 +157,71 @@
             async function loadData() {
                 if (!db) return;
                 try {
-                    const salesRes = await db.collection('sales').get();
-                    const sales = salesRes.data.filter(s => s.salesId !== 'admin');
-                    const customersRes = await db.collection('customers').get();
-                    const customers = customersRes.data;
+                    var salesRes = await db.collection('sales').get();
+                    var sales = salesRes.data.filter(function(s) { return s.salesId !== 'admin'; });
+                    var customersRes = await db.collection('customers').get();
+                    var customers = customersRes.data;
 
-                    const countMap = new Map();
-                    customers.forEach(c => countMap.set(c.salesId, (countMap.get(c.salesId) || 0) + 1));
+                    var countMap = new Map();
+                    customers.forEach(function(c) {
+                        countMap.set(c.salesId, (countMap.get(c.salesId) || 0) + 1);
+                    });
 
-                    const salesTbody = document.getElementById('salesList');
+                    var salesTbody = document.getElementById('salesList');
                     if (sales.length === 0) {
-                        salesTbody.innerHTML = '……
+                        salesTbody.innerHTML = '<tr><td colspan="7">暂无销售员数据</td></tr>';
                     } else {
-                        salesTbody.innerHTML = sales.map(s => `
-                            <tr>
-                                <td>${escapeHtml(s.salesId)}</td>
-                                <td>${escapeHtml(s.name)}</td>
-                                <td>${escapeHtml(s.phone)}</td>
-                                <td>${escapeHtml(s.regionName || '')}</td>
-                                <td>${s.level === 1 ? '一级（市）' : s.level === 2 ? '二级（区县）' : '三级（街道）'}</td>
-                                <td>${s.parentId || '-'}</td>
-                                <td>${countMap.get(s.salesId) || 0}</td>
-                                <td><button onclick="resetPassword('${escapeHtml(s.salesId)}')">重置密码</button></td>
-                            ……
-                        `).join('');
+                        var salesHtml = '';
+                        for (var i = 0; i < sales.length; i++) {
+                            var s = sales[i];
+                            var levelText = s.level === 1 ? '一级（市）' : (s.level === 2 ? '二级（区县）' : '三级（街道）');
+                            salesHtml += '<tr>';
+                            salesHtml += '<td>' + escapeHtml(s.salesId) + '</td>';
+                            salesHtml += '<td>' + escapeHtml(s.name) + '</td>';
+                            salesHtml += '<td>' + escapeHtml(s.phone) + '</td>';
+                            salesHtml += '<td>' + levelText + '</td>';
+                            salesHtml += '<td>' + (s.parentId || '-') + '</td>';
+                            salesHtml += '<td>' + (countMap.get(s.salesId) || 0) + '</td>';
+                            salesHtml += '<td><button onclick="resetPassword(\'' + escapeHtml(s.salesId) + '\')">重置密码</button></td>';
+                            salesHtml += '</tr>';
+                        }
+                        salesTbody.innerHTML = salesHtml;
                     }
 
-                    const levelCount = {1:0,2:0,3:0};
-                    sales.forEach(s => levelCount[s.level]++);
-                    const totalCustomers = customers.length;
-                    const statsHtml = `
-                        <div class="stat-card"><div class="stat-number">${sales.length}</div><div>总销售员</div></div>
-                        <div class="stat-card"><div class="stat-number">${levelCount[1] || 0}</div><div>一级销售员</div></div>
-                        <div class="stat-card"><div class="stat-number">${levelCount[2] || 0}</div><div>二级销售员</div></div>
-                        <div class="stat-card"><div class="stat-number">${levelCount[3] || 0}</div><div>三级销售员</div></div>
-                        <div class="stat-card"><div class="stat-number">${totalCustomers}</div><div>总商家数</div></div>
-                    `;
+                    var levelCount = {1:0,2:0,3:0};
+                    for (var i = 0; i < sales.length; i++) {
+                        levelCount[sales[i].level]++;
+                    }
+                    var totalCustomers = customers.length;
+                    var statsHtml = '';
+                    statsHtml += '<div class="stat-card"><div class="stat-number">' + sales.length + '</div><div>总销售员</div></div>';
+                    statsHtml += '<div class="stat-card"><div class="stat-number">' + (levelCount[1] || 0) + '</div><div>一级销售员</div></div>';
+                    statsHtml += '<div class="stat-card"><div class="stat-number">' + (levelCount[2] || 0) + '</div><div>二级销售员</div></div>';
+                    statsHtml += '<div class="stat-card"><div class="stat-number">' + (levelCount[3] || 0) + '</div><div>三级销售员</div></div>';
+                    statsHtml += '<div class="stat-card"><div class="stat-number">' + totalCustomers + '</div><div>总商家数</div></div>';
                     document.getElementById('stats').innerHTML = statsHtml;
 
-                    const salesMap = new Map();
-                    sales.forEach(s => salesMap.set(s.salesId, s.name));
-                    const customerRows = customers.map(c => `
-                        <tr>
-                            <td>${escapeHtml(c.shopName)}</td>
-                            <td>${escapeHtml(c.address)}</td>
-                            <td>${escapeHtml(c.phone)}</td>
-                            <td>${escapeHtml(c.category)}</td>
-                            <td>${escapeHtml(c.remark || '')}</td>
-                            <td>${escapeHtml(salesMap.get(c.salesId) || c.salesId)}</td>
-                            <td>${new Date(c.createdAt).toLocaleString()}</td>
-                        ……
-                    `).join('');
-                    document.getElementById('allCustomersList').innerHTML = customerRows || '……
+                    var salesMap = new Map();
+                    for (var i = 0; i < sales.length; i++) {
+                        salesMap.set(sales[i].salesId, sales[i].name);
+                    }
+                    var customerRows = '';
+                    for (var i = 0; i < customers.length; i++) {
+                        var c = customers[i];
+                        customerRows += '<tr>';
+                        customerRows += '<td>' + escapeHtml(c.shopName) + '</td>';
+                        customerRows += '<td>' + escapeHtml(c.address) + '</td>';
+                        customerRows += '<td>' + escapeHtml(c.phone) + '</td>';
+                        customerRows += '<td>' + escapeHtml(c.category) + '</td>';
+                        customerRows += '<td>' + escapeHtml(c.remark || '') + '</td>';
+                        customerRows += '<td>' + escapeHtml(salesMap.get(c.salesId) || c.salesId) + '</td>';
+                        customerRows += '<td>' + new Date(c.createdAt).toLocaleString() + '</td>';
+                        customerRows += '</tr>';
+                    }
+                    if (customerRows === '') {
+                        customerRows = '<tr><td colspan="7">暂无商家数据</td></tr>';
+                    }
+                    document.getElementById('allCustomersList').innerHTML = customerRows;
                 } catch (err) {
                     console.error(err);
                     showToast('加载数据失败，请刷新重试');
@@ -211,33 +230,34 @@
 
             async function addSalesman() {
                 if (!isCloudReady) { showToast('系统未就绪，请稍后再试'); return; }
-                const name = document.getElementById('newName').value.trim();
-                const phone = document.getElementById('newPhone').value.trim();
-                const password = document.getElementById('newPassword').value.trim();
-                const regionName = document.getElementById('newRegion').value.trim();
-                const level = 1; // 管理员添加的都是一级销售员
-                if (!name || !phone || !password || !regionName) {
-                    showToast('请填写姓名、手机号、密码和区域名称');
+                var name = document.getElementById('newName').value.trim();
+                var phone = document.getElementById('newPhone').value.trim();
+                var password = document.getElementById('newPassword').value.trim();
+                var level = parseInt(document.getElementById('newLevel').value);
+                if (!name || !phone || !password) {
+                    showToast('请填写姓名、手机号和密码');
                     return;
                 }
-                const exist = await db.collection('sales').where({ phone }).get();
+                var exist = await db.collection('sales').where({ phone: phone }).get();
                 if (exist.data.length > 0) {
                     showToast('该手机号已注册');
                     return;
                 }
-                const salesId = Date.now().toString();
+                var salesId = Date.now().toString();
                 try {
                     await db.collection('sales').add({
-                        salesId, name, phone, password, level,
-                        regionName,
+                        salesId: salesId,
+                        name: name,
+                        phone: phone,
+                        password: password,
+                        level: level,
                         parentId: null,
                         createdAt: new Date().toISOString()
                     });
-                    showToast('✅ 一级销售员添加成功');
+                    showToast('销售员添加成功');
                     document.getElementById('newName').value = '';
                     document.getElementById('newPhone').value = '';
                     document.getElementById('newPassword').value = '123456';
-                    document.getElementById('newRegion').value = '';
                     await loadData();
                 } catch (err) {
                     console.error(err);
@@ -247,10 +267,10 @@
 
             window.resetPassword = async function(salesId) {
                 if (!isCloudReady) { showToast('系统未就绪'); return; }
-                const newPwd = prompt('请输入新密码（默认123456）', '123456');
+                var newPwd = prompt('请输入新密码（默认123456）', '123456');
                 if (newPwd === null) return;
                 try {
-                    const res = await db.collection('sales').where({ salesId }).get();
+                    var res = await db.collection('sales').where({ salesId: salesId }).get();
                     if (res.data.length > 0) {
                         await db.collection('sales').doc(res.data[0]._id).update({ password: newPwd });
                         showToast('密码已重置');
@@ -261,19 +281,22 @@
             };
 
             window.exportCSV = function() {
-                const table = document.getElementById('allCustomersList');
-                const rows = table.querySelectorAll('tr');
-                let csv = '店名,地址,电话,类目,备注,录入销售员,录入时间\n';
-                rows.forEach(row => {
-                    const cells = row.querySelectorAll('td');
+                var table = document.getElementById('allCustomersList');
+                var rows = table.querySelectorAll('tr');
+                var csv = '店名,地址,电话,类目,备注,录入销售员,录入时间\n';
+                for (var i = 0; i < rows.length; i++) {
+                    var cells = rows[i].querySelectorAll('td');
                     if (cells.length) {
-                        const rowData = Array.from(cells).map(cell => `"${cell.innerText}"`).join(',');
-                        csv += rowData + '\n';
+                        var rowData = [];
+                        for (var j = 0; j < cells.length; j++) {
+                            rowData.push('"' + cells[j].innerText + '"');
+                        }
+                        csv += rowData.join(',') + '\n';
                     }
-                });
-                const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement('a');
-                const url = URL.createObjectURL(blob);
+                }
+                var blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+                var link = document.createElement('a');
+                var url = URL.createObjectURL(blob);
                 link.href = url;
                 link.setAttribute('download', '商家数据.csv');
                 document.body.appendChild(link);
@@ -289,8 +312,6 @@
                     if (m === '<') return '&lt;';
                     if (m === '>') return '&gt;';
                     return m;
-                }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-                    return c;
                 });
             }
 
@@ -299,10 +320,10 @@
                 window.location.href = 'index.html';
             }
 
-            (async () => {
+            (async function() {
                 await initCloud();
                 if (!isCloudReady) return;
-                const salesId = localStorage.getItem('salesId');
+                var salesId = localStorage.getItem('salesId');
                 if (salesId !== 'admin') {
                     alert('无权访问，请使用管理员账号登录');
                     return;

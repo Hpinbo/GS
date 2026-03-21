@@ -156,7 +156,7 @@
                         <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th>……
                     </thead>
                     <tbody id="customerList"></tbody>
-                </table>
+                ……
             </div>
         </div>
     </div>
@@ -165,7 +165,6 @@
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
         let db = null;
-        let initSuccess = false;
         let currentSales = {};
 
         function showToast(msg) {
@@ -184,10 +183,9 @@
                 const app = cloudbase.init({ env: ENV_ID });
                 db = app.database();
                 await db.collection('sales').limit(1).get();
-                initSuccess = true;
                 return true;
             } catch (err) {
-                console.error('初始化失败', err);
+                console.error(err);
                 alert('初始化失败：' + (err.message || '请检查网络'));
                 return false;
             }
@@ -353,14 +351,11 @@
             }
             tbody.innerHTML = customers.map(c => `
                 <tr>
-                    <td>${c.shopName}</td>
-                    <td>${c.address}</td>
-                    <td>${c.phone}</td>
-                    <td>${c.category}</td>
-                    <td>${c.remark || ''}</td>
+                    <td>${c.shopName}</td><td>${c.address}</td><td>${c.phone}</td>
+                    <td>${c.category}</td><td>${c.remark || ''}</td>
                     <td>${new Date(c.createdAt).toLocaleString()}</td>
                     <td>${salesMap.get(c.salesId) || c.salesId}</td>
-                </tr>
+                ……
             `).join('');
         }
 

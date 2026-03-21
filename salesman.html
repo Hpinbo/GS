@@ -283,21 +283,20 @@
                 }
                 var tbody = document.getElementById('customerList');
                 if (customers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
+                    tbody.innerHTML = '……
                     return;
                 }
                 var html = '';
                 for (var i = 0; i < customers.length; i++) {
                     var c = customers[i];
-                    html += '<tr>';
-                    html += '<td>' + escapeHtml(c.shopName) + '</td>';
-                    html += '<td>' + escapeHtml(c.address) + '</td>';
-                    html += '<td>' + escapeHtml(c.phone) + '</td>';
-                    html += '<td>' + escapeHtml(c.category) + '</td>';
-                    html += '<td>' + escapeHtml(c.remark || '') + '</td>';
-                    html += '<td>' + new Date(c.createdAt).toLocaleString() + '</td>';
-                    html += '<td>' + escapeHtml(salesMap.get(c.salesId) || c.salesId) + '</td>';
-                    html += '</tr>';
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
+                    html += '……
                 }
                 tbody.innerHTML = html;
             }
@@ -342,7 +341,9 @@
             });
 
             function generateQR() {
-                var formUrl = window.location.origin + '/customer_form.html?salesId=' + currentSales.id;
+                // 自动获取当前页面所在目录（如 /GS/）
+                var baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+                var formUrl = baseUrl + 'customer_form.html?salesId=' + currentSales.id;
                 document.getElementById('formLink').innerHTML = '<a href="' + formUrl + '" target="_blank">' + formUrl + '</a>';
                 var img = document.createElement('img');
                 img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(formUrl);

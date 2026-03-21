@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>销售员后台</title>
+    <title>砚拓·销售员后台</title>
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
@@ -67,7 +67,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContainer" style="display: none;">
         <div class="card">
             <h2>👤 欢迎，<span id="salesName"></span>（<span id="levelName"></span>级销售员）</h2>
             <div style="text-align: right;">
@@ -156,7 +156,7 @@
                         <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th>……
                     </thead>
                     <tbody id="customerList"></tbody>
-                ……
+                </table>
             </div>
         </div>
     </div>
@@ -165,6 +165,7 @@
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
         let db = null;
+        let initSuccess = false;
         let currentSales = {};
 
         function showToast(msg) {
@@ -174,14 +175,25 @@
             setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
-        window.addEventListener('load', async function() {
+        async function initCloud() {
             if (typeof cloudbase === 'undefined') {
-                alert('SDK 加载失败，请刷新重试');
-                return;
+                alert('SDK 加载失败，请刷新页面重试');
+                return false;
             }
-            const app = cloudbase.init({ env: ENV_ID });
-            db = app.database();
+            try {
+                const app = cloudbase.init({ env: ENV_ID });
+                db = app.database();
+                await db.collection('sales').limit(1).get();
+                initSuccess = true;
+                return true;
+            } catch (err) {
+                console.error('初始化失败', err);
+                alert('初始化失败：' + (err.message || '请检查网络'));
+                return false;
+            }
+        }
 
+        async function loadSalesmanData() {
             const id = localStorage.getItem('salesId');
             const name = localStorage.getItem('salesName');
             const level = localStorage.getItem('salesLevel');
@@ -194,22 +206,18 @@
             const levelNames = {1:'一',2:'二',3:'三'};
             document.getElementById('levelName').innerText = levelNames[currentSales.level];
 
-            // 发展下级面板（1级可加2、3级；2级可加3级）
             if (currentSales.level === 1 || currentSales.level === 2) {
                 document.getElementById('addSubordinatePanel').style.display = 'block';
                 const subLevelSelect = document.getElementById('subLevel');
                 if (currentSales.level === 1) {
                     subLevelSelect.innerHTML = '<option value="">请选择</option><option value="2">二级销售员（区县）</option><option value="3">三级销售员（街道）</option>';
-                } else if (currentSales.level === 2) {
+                } else {
                     subLevelSelect.innerHTML = '<option value="">请选择</option><option value="3">三级销售员（街道）</option>';
                 }
             }
-
-            // 加载业绩
             await loadCustomers();
-        });
+        }
 
-        // 类目自定义
         const categorySelect = document.getElementById('category');
         const customGroup = document.getElementById('customCategoryGroup');
         const customInput = document.getElementById('customCategory');
@@ -224,7 +232,6 @@
             }
         });
 
-        // 提交商家信息
         document.getElementById('customerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const shopName = document.getElementById('shopName').value.trim();
@@ -268,7 +275,6 @@
             document.getElementById('qrCodeResult').style.display = 'block';
         }
 
-        // 添加下级
         document.getElementById('subordinateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('subName').value.trim();
@@ -285,13 +291,18 @@
                 return;
             }
             const salesId = Date.now().toString();
-            await db.collection('sales').add({
-                salesId, name, phone, password, level,
-                parentId: currentSales.id,
-                createdAt: new Date().toISOString()
-            });
-            showToast('✅ 下级销售员添加成功');
-            document.getElementById('subordinateForm').reset();
+            try {
+                await db.collection('sales').add({
+                    salesId, name, phone, password, level,
+                    parentId: currentSales.id,
+                    createdAt: new Date().toISOString()
+                });
+                showToast('✅ 下级销售员添加成功');
+                document.getElementById('subordinateForm').reset();
+            } catch (err) {
+                console.error(err);
+                showToast('添加失败，请重试');
+            }
         });
 
         async function loadCustomers() {
@@ -337,7 +348,7 @@
             allSales.data.forEach(s => salesMap.set(s.salesId, s.name));
             const tbody = document.getElementById('customerList');
             if (customers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7">暂无数据</tr>';
+                tbody.innerHTML = '……
                 return;
             }
             tbody.innerHTML = customers.map(c => `
@@ -355,8 +366,16 @@
 
         function logout() {
             localStorage.clear();
-            window.location.href = 'login.html';
+            const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+            window.location.href = baseUrl + 'login.html';
         }
+
+        (async () => {
+            const ok = await initCloud();
+            if (!ok) return;
+            document.getElementById('mainContainer').style.display = 'block';
+            await loadSalesmanData();
+        })();
     </script>
 </body>
 </html>

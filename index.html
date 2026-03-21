@@ -1,33 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>云开发连接测试</title>
-    <script src="https://web.sdk.qcloud.com/cloudbase/2.0.0/cloudbase.js"></script>
+    <!-- 使用多个备用 CDN 确保加载成功 -->
+    <script src="https://unpkg.com/@cloudbase/js-sdk@1.7.0/dist/cloudbase.full.js"></script>
+    <script>
+        // 如果上面的 CDN 失败，备用
+        window.onerror = function() {
+            document.getElementById('result').innerHTML = '主 CDN 加载失败，尝试备用...';
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.7.0/dist/cloudbase.full.js';
+            script.onload = function() { init(); };
+            document.head.appendChild(script);
+            return true;
+        };
+    </script>
 </head>
 <body>
+    <h2>云开发连接测试</h2>
     <div id="result">测试中...</div>
+    <div id="detail" style="margin-top:20px; font-family:monospace; font-size:12px; background:#f0f0f0; padding:10px;"></div>
+    
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
         const resultDiv = document.getElementById('result');
+        const detailDiv = document.getElementById('detail');
         
-        (async () => {
-            resultDiv.innerHTML = '等待 SDK...';
+        function log(msg) {
+            console.log(msg);
+            detailDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + msg + '<br>';
+        }
+        
+        async function init() {
+            log('开始初始化...');
+            log('检查 cloudbase 对象: ' + (typeof cloudbase));
+            
             if (typeof cloudbase === 'undefined') {
-                resultDiv.innerHTML = 'SDK 加载失败';
+                log('❌ cloudbase 未定义，SDK 加载失败');
+                resultDiv.innerHTML = '❌ SDK 加载失败，请检查网络或手动刷新';
                 return;
             }
-            resultDiv.innerHTML = 'SDK 已加载，初始化中...';
+            
+            log('✅ cloudbase 已加载');
+            
             try {
-                const app = cloudbase.init({ env: ENV_ID });
+                log('调用 cloudbase.init({ env: "' + ENV_ID + '" })');
+                const app = cloudbase.init({ 
+                    env: ENV_ID,
+                    timeout: 30000 
+                });
+                log('init 成功');
+                
                 const db = app.database();
-                resultDiv.innerHTML = '测试数据库连接...';
+                log('数据库实例创建成功');
+                
+                log('测试查询 sales 集合...');
                 const res = await db.collection('sales').limit(1).get();
-                resultDiv.innerHTML = '✅ 成功！查到 ' + res.data.length + ' 条数据';
+                log('查询成功，返回 ' + res.data.length + ' 条数据');
+                resultDiv.innerHTML = '✅ 连接成功！查询到 ' + res.data.length + ' 条数据。';
+                
+                if (res.data.length === 0) {
+                    log('⚠️ 注意：sales 集合为空，请先添加管理员记录');
+                } else {
+                    log('数据示例: ' + JSON.stringify(res.data[0]));
+                }
             } catch (err) {
-                resultDiv.innerHTML = '❌ 失败：' + err.message;
-                console.error(err);
+                log('❌ 初始化失败: ' + (err.message || JSON.stringify(err)));
+                console.error('完整错误:', err);
+                resultDiv.innerHTML = '❌ 连接失败：' + (err.message || '未知错误');
+                
+                // 提供更详细的错误建议
+                if (err.message && err.message.includes('scope')) {
+                    detailDiv.innerHTML += '<br>⚠️ 检测到 scope 错误，可能原因：<br>';
+                    detailDiv.innerHTML += '1. 安全域名未正确配置（需添加 https://hpinbo.github.io）<br>';
+                    detailDiv.innerHTML += '2. 浏览器扩展（如广告拦截器）阻止了请求<br>';
+                    detailDiv.innerHTML += '3. 公司网络防火墙拦截了云开发 API<br>';
+                    detailDiv.innerHTML += '4. 尝试使用无痕模式或手机热点访问<br>';
+                } else if (err.message && err.message.includes('timeout')) {
+                    detailDiv.innerHTML += '<br>⚠️ 连接超时，请检查网络或更换网络环境';
+                } else if (err.message && err.message.includes('permission')) {
+                    detailDiv.innerHTML += '<br>⚠️ 权限错误，请检查数据库权限设置';
+                }
             }
-        })();
+        }
+        
+        // 等待 DOM 加载完成后启动
+        window.addEventListener('load', function() {
+            setTimeout(init, 500);
+        });
     </script>
 </body>
 </html>

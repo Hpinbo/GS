@@ -283,20 +283,21 @@
                 }
                 var tbody = document.getElementById('customerList');
                 if (customers.length === 0) {
-                    tbody.innerHTML = '……
+                    tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
                     return;
                 }
                 var html = '';
                 for (var i = 0; i < customers.length; i++) {
                     var c = customers[i];
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
+                    html += '<tr>';
+                    html += '<td>' + escapeHtml(c.shopName) + '</td>';
+                    html += '<td>' + escapeHtml(c.address) + '</td>';
+                    html += '<td>' + escapeHtml(c.phone) + '</td>';
+                    html += '<td>' + escapeHtml(c.category) + '</td>';
+                    html += '<td>' + escapeHtml(c.remark || '') + '</td>';
+                    html += '<td>' + new Date(c.createdAt).toLocaleString() + '</td>';
+                    html += '<td>' + escapeHtml(salesMap.get(c.salesId) || c.salesId) + '</td>';
+                    html += '</tr>';
                 }
                 tbody.innerHTML = html;
             }
@@ -341,21 +342,14 @@
             });
 
             function generateQR() {
-                if (!currentSales || !currentSales.id) {
-                    showToast('无法生成二维码，请刷新页面重试');
-                    return;
-                }
-                var baseUrl = window.location.origin;
-                var formUrl = baseUrl + '/customer_form.html?salesId=' + encodeURIComponent(currentSales.id);
+                var formUrl = window.location.origin + '/customer_form.html?salesId=' + currentSales.id;
                 document.getElementById('formLink').innerHTML = '<a href="' + formUrl + '" target="_blank">' + formUrl + '</a>';
                 var img = document.createElement('img');
                 img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(formUrl);
-                img.alt = '二维码';
                 var qrImgDiv = document.getElementById('qrCodeImg');
                 qrImgDiv.innerHTML = '';
                 qrImgDiv.appendChild(img);
                 document.getElementById('qrCodeResult').style.display = 'block';
-                showToast('二维码已生成，可保存或分享');
             }
 
             document.getElementById('subordinateForm').addEventListener('submit', async function(e) {
@@ -410,6 +404,16 @@
             function logout() {
                 localStorage.clear();
                 window.location.href = 'index.html';
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
             }
 
             window.logout = logout;

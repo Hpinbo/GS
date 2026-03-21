@@ -62,7 +62,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>商家信息填写</h2>
+        <h2>📝 商家信息填写</h2>
         <p>请填写您的店铺信息，我们将尽快为您服务。</p>
         <form id="customerForm">
             <div class="form-group">
@@ -151,10 +151,7 @@
 
             document.getElementById('customerForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                if (!isCloudReady) {
-                    showToast('系统未就绪，请稍后再试');
-                    return;
-                }
+                if (!isCloudReady) { showToast('系统未就绪，请稍后再试'); return; }
                 var shopName = document.getElementById('shopName').value.trim();
                 var address = document.getElementById('address').value.trim();
                 var phone = document.getElementById('phone').value.trim();
@@ -179,7 +176,7 @@
                         salesId: salesId,
                         createdAt: new Date().toISOString()
                     });
-                    showToast('提交成功！感谢您的信任');
+                    showToast('✅ 提交成功！感谢您的信任');
                     document.getElementById('customerForm').reset();
                     categorySelect.value = '';
                     customGroup.style.display = 'none';

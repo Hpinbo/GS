@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>销售系统登录</title>
+    <title>砚拓·销售系统登录</title>
+    <!-- 使用官方稳定版 SDK -->
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
@@ -79,16 +80,24 @@
             else btn.innerText = '登录';
         }
 
+        // 等待 SDK 加载完成后再初始化
         async function initCloud() {
+            // 如果 SDK 尚未加载，等待
             if (typeof cloudbase === 'undefined') {
-                document.getElementById('errorMsg').innerText = 'SDK 加载失败，请刷新页面重试';
-                setLoginButton(true, '初始化失败');
-                return false;
+                console.warn('cloudbase 未加载，等待中...');
+                await new Promise(resolve => {
+                    const check = setInterval(() => {
+                        if (typeof cloudbase !== 'undefined') {
+                            clearInterval(check);
+                            resolve();
+                        }
+                    }, 100);
+                });
             }
             try {
                 const app = cloudbase.init({ env: ENV_ID });
                 db = app.database();
-                // 测试连接
+                // 测试连接，获取一条数据验证权限
                 await db.collection('sales').limit(1).get();
                 initSuccess = true;
                 setLoginButton(false);
@@ -99,6 +108,7 @@
                 let errorMsg = '数据库初始化失败：';
                 if (err.message && err.message.includes('env')) errorMsg += '环境ID错误，请检查';
                 else if (err.message && err.message.includes('permission')) errorMsg += '权限不足，请检查安全域名或数据库权限';
+                else if (err.message && err.message.includes('scope')) errorMsg += 'SDK 初始化失败，请刷新页面重试';
                 else errorMsg += err.message || '未知错误';
                 document.getElementById('errorMsg').innerText = errorMsg;
                 setLoginButton(true, '初始化失败');
@@ -141,6 +151,7 @@
             }
         }
 
+        // 页面加载后初始化
         window.addEventListener('load', initCloud);
     </script>
 </body>

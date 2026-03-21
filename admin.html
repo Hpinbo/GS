@@ -32,7 +32,6 @@
             cursor: pointer;
             font-size: 0.8rem;
         }
-        button:disabled { background: #95a5a6; cursor: not-allowed; }
         .toast {
             position: fixed;
             bottom: 30px;
@@ -46,7 +45,6 @@
             display: none;
             z-index: 2000;
         }
-        .error-msg { color: #e74c3c; text-align: center; margin: 20px; }
         .form-group { margin-bottom: 16px; }
         .form-group input, .form-group select {
             width: 100%;
@@ -124,7 +122,6 @@
             <button onclick="exportCSV()" style="margin-top: 16px;">📎 导出CSV</button>
         </div>
     </div>
-    <div id="errorContainer" class="error-msg" style="display: none;"></div>
     <div id="toast" class="toast"></div>
 
     <script>
@@ -139,16 +136,9 @@
             setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
-        function showError(msg) {
-            const errorDiv = document.getElementById('errorContainer');
-            errorDiv.innerText = msg;
-            errorDiv.style.display = 'block';
-            document.getElementById('mainContainer').style.display = 'none';
-        }
-
         async function initCloud() {
             if (typeof cloudbase === 'undefined') {
-                showError('SDK 加载失败，请刷新页面重试');
+                alert('SDK 加载失败，请刷新页面重试');
                 return false;
             }
             try {
@@ -158,12 +148,8 @@
                 initSuccess = true;
                 return true;
             } catch (err) {
-                console.error('初始化失败', err);
-                let errorMsg = '数据库初始化失败：';
-                if (err.message && err.message.includes('env')) errorMsg += '环境ID错误，请检查';
-                else if (err.message && err.message.includes('permission')) errorMsg += '权限不足，请检查安全域名或数据库权限';
-                else errorMsg += err.message || '未知错误';
-                showError(errorMsg);
+                console.error(err);
+                alert('初始化失败：' + (err.message || '请检查安全域名'));
                 return false;
             }
         }
@@ -185,14 +171,11 @@
                 } else {
                     salesTbody.innerHTML = sales.map(s => `
                         <tr>
-                            <td>${s.salesId}</td>
-                            <td>${s.name}</td>
-                            <td>${s.phone}</td>
+                            <td>${s.salesId}</td><td>${s.name}</td><td>${s.phone}</td>
                             <td>${s.level === 1 ? '一级（市）' : s.level === 2 ? '二级（区县）' : '三级（街道）'}</td>
-                            <td>${s.parentId || '-'}</td>
-                            <td>${countMap.get(s.salesId) || 0}</td>
+                            <td>${s.parentId || '-'}</td><td>${countMap.get(s.salesId) || 0}</td>
                             <td><button onclick="resetPassword('${s.salesId}')">重置密码</button></td>
-                        </tr>
+                        ……
                     `).join('');
                 }
 
@@ -212,14 +195,11 @@
                 sales.forEach(s => salesMap.set(s.salesId, s.name));
                 const customerRows = customers.map(c => `
                     <tr>
-                        <td>${c.shopName}</td>
-                        <td>${c.address}</td>
-                        <td>${c.phone}</td>
-                        <td>${c.category}</td>
-                        <td>${c.remark || ''}</td>
+                        <td>${c.shopName}</td><td>${c.address}</td><td>${c.phone}</td>
+                        <td>${c.category}</td><td>${c.remark || ''}</td>
                         <td>${salesMap.get(c.salesId) || c.salesId}</td>
                         <td>${new Date(c.createdAt).toLocaleString()}</td>
-                    </tr>
+                    ……
                 `).join('');
                 document.getElementById('allCustomersList').innerHTML = customerRows || '……
             } catch (err) {
@@ -307,7 +287,7 @@
             if (!ok) return;
             const salesId = localStorage.getItem('salesId');
             if (salesId !== 'admin') {
-                showError('无权访问，请使用管理员账号登录');
+                alert('无权访问，请使用管理员账号登录');
                 return;
             }
             document.getElementById('mainContainer').style.display = 'block';

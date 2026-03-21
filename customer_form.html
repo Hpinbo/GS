@@ -102,7 +102,13 @@
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
         let db = null;
-        let salesId = null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const salesId = urlParams.get('salesId');
+        if (!salesId) {
+            alert('无效链接，请联系销售员');
+            throw new Error('缺少销售员ID');
+        }
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -111,21 +117,22 @@
             setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
-        window.addEventListener('load', function() {
+        async function initCloud() {
             if (typeof cloudbase === 'undefined') {
-                alert('SDK 加载失败，请刷新重试');
-                return;
+                alert('SDK 加载失败，请刷新页面重试');
+                return false;
             }
-            const app = cloudbase.init({ env: ENV_ID });
-            db = app.database();
-
-            const urlParams = new URLSearchParams(window.location.search);
-            salesId = urlParams.get('salesId');
-            if (!salesId) {
-                alert('无效链接，请联系销售员');
-                throw new Error('缺少销售员ID');
+            try {
+                const app = cloudbase.init({ env: ENV_ID });
+                db = app.database();
+                await db.collection('sales').limit(1).get();
+                return true;
+            } catch (err) {
+                console.error(err);
+                alert('初始化失败，请稍后再试');
+                return false;
             }
-        });
+        }
 
         const categorySelect = document.getElementById('category');
         const customGroup = document.getElementById('customCategoryGroup');
@@ -172,6 +179,8 @@
                 showToast('提交失败，请重试');
             }
         });
+
+        initCloud();
     </script>
 </body>
 </html>

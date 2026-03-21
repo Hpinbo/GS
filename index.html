@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>销售系统登录</title>
-    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <!-- 使用国内更稳定的 CDN -->
+    <script src="https://unpkg.com/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body {
@@ -57,14 +58,28 @@
 
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
-        const app = cloud.init({ env: ENV_ID });
-        const db = app.database();
+        let db = null;
+
+        // 等待 DOM 加载完成后再初始化云开发
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof cloud === 'undefined') {
+                document.getElementById('errorMsg').innerText = '系统初始化失败，请刷新页面重试';
+                console.error('云开发 SDK 未加载');
+                return;
+            }
+            const app = cloud.init({ env: ENV_ID });
+            db = app.database();
+        });
 
         async function login() {
             const phone = document.getElementById('phone').value.trim();
             const pwd = document.getElementById('password').value.trim();
             if (!phone || !pwd) {
                 document.getElementById('errorMsg').innerText = '请输入手机号和密码';
+                return;
+            }
+            if (!db) {
+                document.getElementById('errorMsg').innerText = '系统初始化中，请稍后再试';
                 return;
             }
             try {
@@ -84,7 +99,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById('errorMsg').innerText = '登录失败，请重试';
+                document.getElementById('errorMsg').innerText = '登录失败，请检查网络或数据库权限';
             }
         }
     </script>

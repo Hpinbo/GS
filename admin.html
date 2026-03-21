@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>砚拓·管理员后台</title>
-    <script src="https://unpkg.com/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <title>管理员后台</title>
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body { background: #f5f7fa; padding: 20px; }
@@ -20,16 +20,8 @@
         .stats { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
         .stat-card { background: #f8f9fc; border-radius: 20px; padding: 16px; min-width: 150px; }
         .stat-number { font-size: 1.8rem; font-weight: bold; color: #2c3e50; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ecf0f1;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ecf0f1; }
         th { background: #f8f9fc; font-weight: 600; }
         button {
             background: #2c3e50;
@@ -63,30 +55,27 @@
                 <button onclick="logout()">退出登录</button>
             </div>
         </div>
-
         <div class="card">
             <h2>📊 整体统计</h2>
             <div id="stats" class="stats"></div>
         </div>
-
         <div class="card">
             <h2>👥 销售员列表</h2>
             <div style="overflow-x: auto;">
                 <table id="salesTable">
                     <thead>
-                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th></tr>
+                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th>
                     </thead>
                     <tbody id="salesList"></tbody>
                 </table>
             </div>
         </div>
-
         <div class="card">
             <h2>🏪 所有商家</h2>
             <div style="overflow-x: auto;">
                 <table id="allCustomersTable">
                     <thead>
-                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th></tr>
+                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th>
                     </thead>
                     <tbody id="allCustomersList"></tbody>
                 </table>
@@ -100,12 +89,19 @@
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
         let db = null;
 
-        window.addEventListener('DOMContentLoaded', async function() {
-            if (typeof cloud === 'undefined') {
-                alert('系统初始化失败，请刷新页面重试');
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        window.addEventListener('load', async function() {
+            if (typeof cloudbase === 'undefined') {
+                alert('SDK 加载失败，请刷新重试');
                 return;
             }
-            const app = cloud.init({ env: ENV_ID });
+            const app = cloudbase.init({ env: ENV_ID });
             db = app.database();
 
             const salesId = localStorage.getItem('salesId');
@@ -144,14 +140,13 @@
                 const levelCount = {1:0,2:0,3:0};
                 sales.forEach(s => levelCount[s.level]++);
                 const totalCustomers = customers.length;
-                const statsHtml = `
+                document.getElementById('stats').innerHTML = `
                     <div class="stat-card"><div class="stat-number">${sales.length}</div><div>总销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${levelCount[1] || 0}</div><div>一级销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${levelCount[2] || 0}</div><div>二级销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${levelCount[3] || 0}</div><div>三级销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${totalCustomers}</div><div>总商家数</div></div>
                 `;
-                document.getElementById('stats').innerHTML = statsHtml;
 
                 const salesMap = new Map();
                 sales.forEach(s => salesMap.set(s.salesId, s.name));
@@ -207,13 +202,6 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
         function logout() {

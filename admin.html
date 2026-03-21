@@ -55,7 +55,7 @@
             font-size: 0.9rem;
         }
         .add-salesman { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
-        .add-salesman .form-group { flex: 1; min-width: 150px; margin-bottom: 0; }
+        .add-salesman .form-group { flex: 1; min-width: 130px; margin-bottom: 0; }
         .add-salesman button { margin-bottom: 0; }
     </style>
 </head>
@@ -69,7 +69,7 @@
         </div>
 
         <div class="card">
-            <h2>➕ 添加销售员</h2>
+            <h2>➕ 添加一级销售员</h2>
             <div class="add-salesman">
                 <div class="form-group">
                     <label>姓名</label>
@@ -84,14 +84,10 @@
                     <input type="text" id="newPassword" placeholder="密码" value="123456">
                 </div>
                 <div class="form-group">
-                    <label>级别</label>
-                    <select id="newLevel">
-                        <option value="1">一级销售员（市）</option>
-                        <option value="2">二级销售员（区县）</option>
-                        <option value="3">三级销售员（街道）</option>
-                    </select>
+                    <label>区域名称（如：杭州市）</label>
+                    <input type="text" id="newRegion" placeholder="一级区域名称">
                 </div>
-                <button onclick="addSalesman()" style="margin-top: 22px;">添加销售员</button>
+                <button onclick="addSalesman()">添加销售员</button>
             </div>
         </div>
 
@@ -104,7 +100,7 @@
             <div style="overflow-x: auto;">
                 <table id="salesTable">
                     <thead>
-                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th>……
+                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>区域名称</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th>……
                     </thead>
                     <tbody id="salesList">……
                 ……
@@ -165,18 +161,19 @@
 
                     const salesTbody = document.getElementById('salesList');
                     if (sales.length === 0) {
-                        salesTbody.innerHTML = '<tr><td colspan="7">暂无销售员数据</td></tr>';
+                        salesTbody.innerHTML = '……
                     } else {
                         salesTbody.innerHTML = sales.map(s => `
                             <tr>
                                 <td>${escapeHtml(s.salesId)}</td>
                                 <td>${escapeHtml(s.name)}</td>
                                 <td>${escapeHtml(s.phone)}</td>
+                                <td>${escapeHtml(s.regionName || '')}</td>
                                 <td>${s.level === 1 ? '一级（市）' : s.level === 2 ? '二级（区县）' : '三级（街道）'}</td>
                                 <td>${s.parentId || '-'}</td>
                                 <td>${countMap.get(s.salesId) || 0}</td>
                                 <td><button onclick="resetPassword('${escapeHtml(s.salesId)}')">重置密码</button></td>
-                            </tr>
+                            ……
                         `).join('');
                     }
 
@@ -203,9 +200,9 @@
                             <td>${escapeHtml(c.remark || '')}</td>
                             <td>${escapeHtml(salesMap.get(c.salesId) || c.salesId)}</td>
                             <td>${new Date(c.createdAt).toLocaleString()}</td>
-                        </tr>
+                        ……
                     `).join('');
-                    document.getElementById('allCustomersList').innerHTML = customerRows || '<tr><td colspan="7">暂无商家数据</td></tr>';
+                    document.getElementById('allCustomersList').innerHTML = customerRows || '……
                 } catch (err) {
                     console.error(err);
                     showToast('加载数据失败，请刷新重试');
@@ -217,9 +214,10 @@
                 const name = document.getElementById('newName').value.trim();
                 const phone = document.getElementById('newPhone').value.trim();
                 const password = document.getElementById('newPassword').value.trim();
-                const level = parseInt(document.getElementById('newLevel').value);
-                if (!name || !phone || !password) {
-                    showToast('请填写姓名、手机号和密码');
+                const regionName = document.getElementById('newRegion').value.trim();
+                const level = 1; // 管理员添加的都是一级销售员
+                if (!name || !phone || !password || !regionName) {
+                    showToast('请填写姓名、手机号、密码和区域名称');
                     return;
                 }
                 const exist = await db.collection('sales').where({ phone }).get();
@@ -231,13 +229,15 @@
                 try {
                     await db.collection('sales').add({
                         salesId, name, phone, password, level,
+                        regionName,
                         parentId: null,
                         createdAt: new Date().toISOString()
                     });
-                    showToast('✅ 销售员添加成功');
+                    showToast('✅ 一级销售员添加成功');
                     document.getElementById('newName').value = '';
                     document.getElementById('newPhone').value = '';
                     document.getElementById('newPassword').value = '123456';
+                    document.getElementById('newRegion').value = '';
                     await loadData();
                 } catch (err) {
                     console.error(err);

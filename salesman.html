@@ -341,7 +341,6 @@
             });
 
             function generateQR() {
-                // 自动获取当前页面所在目录（如 /GS/）
                 var baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
                 var formUrl = baseUrl + 'customer_form.html?salesId=' + currentSales.id;
                 document.getElementById('formLink').innerHTML = '<a href="' + formUrl + '" target="_blank">' + formUrl + '</a>';

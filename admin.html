@@ -103,22 +103,18 @@
             <h2>👥 销售员列表</h2>
             <div style="overflow-x: auto;">
                 <table id="salesTable">
-                    <thead>
-                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th>……
-                    </thead>
-                    <tbody id="salesList">……
-                ……
+                    <thead><tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th></tr></thead>
+                    <tbody id="salesList"><tr><td colspan="7" style="text-align:center;">加载中...</td></tr></tbody>
+                </table>
             </div>
         </div>
         <div class="card">
             <h2>🏪 所有商家</h2>
             <div style="overflow-x: auto;">
                 <table id="allCustomersTable">
-                    <thead>
-                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th>……
-                    </thead>
-                    <tbody id="allCustomersList">……
-                ……
+                    <thead><tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th></tr></thead>
+                    <tbody id="allCustomersList"><tr><td colspan="7" style="text-align:center;">加载中...</td></tr></tbody>
+                </table>
             </div>
             <button onclick="exportCSV()" style="margin-top: 16px;">📎 导出CSV</button>
         </div>
@@ -129,7 +125,6 @@
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
         let db = null;
-        let initSuccess = false;
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -145,41 +140,42 @@
             document.getElementById('mainContainer').style.display = 'none';
         }
 
-        async function initCloud() {
-            if (typeof cloudbase === 'undefined') {
-                await new Promise(resolve => {
-                    const check = setInterval(() => {
+        function initCloud() {
+            return new Promise((resolve, reject) => {
+                if (typeof cloudbase !== 'undefined') {
+                    try {
+                        const app = cloudbase.init({ env: ENV_ID });
+                        db = app.database();
+                        db.collection('sales').limit(1).get().then(() => resolve(true)).catch(reject);
+                    } catch (err) { reject(err); }
+                } else {
+                    let retry = 0;
+                    const interval = setInterval(() => {
+                        retry++;
                         if (typeof cloudbase !== 'undefined') {
-                            clearInterval(check);
-                            resolve();
+                            clearInterval(interval);
+                            try {
+                                const app = cloudbase.init({ env: ENV_ID });
+                                db = app.database();
+                                db.collection('sales').limit(1).get().then(() => resolve(true)).catch(reject);
+                            } catch (err) { reject(err); }
+                        } else if (retry > 50) {
+                            clearInterval(interval);
+                            reject(new Error('SDK 加载超时'));
                         }
-                    }, 200);
-                });
-            }
-            try {
-                const app = cloudbase.init({ env: ENV_ID, region: 'ap-shanghai' });
-                db = app.database();
-                await db.collection('sales').limit(1).get();
-                initSuccess = true;
-                return true;
-            } catch (err) {
-                console.error('初始化失败', err);
-                let errorMsg = '数据库初始化失败：';
-                if (err.message && err.message.includes('env')) errorMsg += '环境ID错误，请检查';
-                else if (err.message && err.message.includes('permission')) errorMsg += '权限不足，请检查安全域名或数据库权限';
-                else if (err.message && err.message.includes('scope')) errorMsg += 'SDK 初始化错误，请检查环境ID或网络，可尝试刷新页面或禁用浏览器扩展';
-                else errorMsg += err.message || '未知错误';
-                showError(errorMsg);
-                return false;
-            }
+                    }, 100);
+                }
+            });
         }
 
         async function loadData() {
             if (!db) return;
             try {
-                const salesRes = await db.collection('sales').get();
+                const [salesRes, customersRes] = await Promise.all([
+                    db.collection('sales').get(),
+                    db.collection('customers').get()
+                ]);
                 const sales = salesRes.data.filter(s => s.salesId !== 'admin');
-                const customersRes = await db.collection('customers').get();
                 const customers = customersRes.data;
 
                 const countMap = new Map();
@@ -187,7 +183,7 @@
 
                 const salesTbody = document.getElementById('salesList');
                 if (sales.length === 0) {
-                    salesTbody.innerHTML = '……
+                    salesTbody.innerHTML = '<tr><td colspan="7">暂无销售员数据</td></tr>';
                 } else {
                     salesTbody.innerHTML = sales.map(s => `
                         <tr>
@@ -227,7 +223,7 @@
                         <td>${new Date(c.createdAt).toLocaleString()}</td>
                     </tr>
                 `).join('');
-                document.getElementById('allCustomersList').innerHTML = customerRows || '……
+                document.getElementById('allCustomersList').innerHTML = customerRows || '<tr><td colspan="7">暂无商家数据</td></tr>';
             } catch (err) {
                 console.error(err);
                 showToast('加载数据失败，请刷新重试');
@@ -304,20 +300,25 @@
 
         function logout() {
             localStorage.clear();
+            // 使用绝对路径，确保正确跳转
             const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
             window.location.href = baseUrl + 'login.html';
         }
 
         (async () => {
-            const ok = await initCloud();
-            if (!ok) return;
-            const salesId = localStorage.getItem('salesId');
-            if (salesId !== 'admin') {
-                showError('无权访问，请使用管理员账号登录');
-                return;
+            try {
+                await initCloud();
+                const salesId = localStorage.getItem('salesId');
+                if (salesId !== 'admin') {
+                    showError('无权访问，请使用管理员账号登录');
+                    return;
+                }
+                document.getElementById('mainContainer').style.display = 'block';
+                await loadData();
+            } catch (err) {
+                console.error(err);
+                showError('初始化失败：' + (err.message || '未知错误'));
             }
-            document.getElementById('mainContainer').style.display = 'block';
-            await loadData();
         })();
     </script>
 </body>

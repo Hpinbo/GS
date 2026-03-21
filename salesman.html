@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>销售员后台</title>
-    <script src="https://unpkg.com/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body { background: #f5f7fa; padding: 20px; }
@@ -153,10 +153,10 @@
             <div style="overflow-x: auto;">
                 <table id="customerTable">
                     <thead>
-                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th></tr>
+                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th>……
                     </thead>
                     <tbody id="customerList"></tbody>
-                </table>
+                ……
             </div>
         </div>
     </div>
@@ -167,12 +167,19 @@
         let db = null;
         let currentSales = {};
 
-        window.addEventListener('DOMContentLoaded', async function() {
-            if (typeof cloud === 'undefined') {
-                alert('系统初始化失败，请刷新页面重试');
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        window.addEventListener('load', async function() {
+            if (typeof cloudbase === 'undefined') {
+                alert('SDK 加载失败，请刷新重试');
                 return;
             }
-            const app = cloud.init({ env: ENV_ID });
+            const app = cloudbase.init({ env: ENV_ID });
             db = app.database();
 
             const id = localStorage.getItem('salesId');
@@ -217,7 +224,7 @@
             }
         });
 
-        // 提交商家信息（手动录入）
+        // 提交商家信息
         document.getElementById('customerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const shopName = document.getElementById('shopName').value.trim();
@@ -251,7 +258,6 @@
             }
         });
 
-        // 生成专属二维码
         function generateQR() {
             const formUrl = `${window.location.origin}/customer_form.html?salesId=${currentSales.id}`;
             document.getElementById('formLink').innerHTML = `<a href="${formUrl}" target="_blank">${formUrl}</a>`;
@@ -262,7 +268,7 @@
             document.getElementById('qrCodeResult').style.display = 'block';
         }
 
-        // 添加下级销售员
+        // 添加下级
         document.getElementById('subordinateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('subName').value.trim();
@@ -288,12 +294,9 @@
             document.getElementById('subordinateForm').reset();
         });
 
-        // 加载业绩（商家列表）
         async function loadCustomers() {
             if (!db) return;
-            let query = db.collection('customers');
             if (currentSales.level === 1) {
-                // 一级：自己 + 所有下级
                 const allSales = await db.collection('sales').get();
                 const subordinates = [];
                 function getSubordinates(parentId) {
@@ -311,13 +314,10 @@
                 renderCustomers(filtered);
                 document.getElementById('statsInfo').innerHTML = `总录入商家数：${filtered.length}`;
             } else if (currentSales.level === 2) {
-                // 二级：自己 + 三级下级
                 const allSales = await db.collection('sales').get();
                 const subordinates = [];
                 for (let s of allSales.data) {
-                    if (s.parentId === currentSales.id) {
-                        subordinates.push(s.salesId);
-                    }
+                    if (s.parentId === currentSales.id) subordinates.push(s.salesId);
                 }
                 subordinates.push(currentSales.id);
                 const res = await db.collection('customers').get();
@@ -325,7 +325,6 @@
                 renderCustomers(filtered);
                 document.getElementById('statsInfo').innerHTML = `总录入商家数：${filtered.length}`;
             } else {
-                // 三级：仅自己
                 const res = await db.collection('customers').where({ salesId: currentSales.id }).get();
                 renderCustomers(res.data);
                 document.getElementById('statsInfo').innerHTML = `总录入商家数：${res.data.length}`;
@@ -338,7 +337,7 @@
             allSales.data.forEach(s => salesMap.set(s.salesId, s.name));
             const tbody = document.getElementById('customerList');
             if (customers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7">暂无数据</tr>';
                 return;
             }
             tbody.innerHTML = customers.map(c => `
@@ -352,13 +351,6 @@
                     <td>${salesMap.get(c.salesId) || c.salesId}</td>
                 </tr>
             `).join('');
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
         function logout() {

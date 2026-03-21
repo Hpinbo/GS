@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>销售系统登录</title>
-    <!-- 使用您确认可用的 SDK -->
-    <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
+    <title>砚拓·销售系统登录</title>
+    <!-- 使用与好评网站相同的稳定旧版 SDK 1.14.0 -->
+    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body {
@@ -50,18 +50,6 @@
         }
         .error { color: #e74c3c; text-align: center; margin-top: 12px; font-size: 0.9rem; }
         .info { color: #f39c12; text-align: center; margin-top: 12px; font-size: 0.9rem; }
-        .debug {
-            background: #f0f0f0;
-            padding: 10px;
-            margin-top: 16px;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            font-family: monospace;
-            word-break: break-all;
-            text-align: left;
-            max-height: 200px;
-            overflow-y: auto;
-        }
     </style>
 </head>
 <body>
@@ -72,19 +60,12 @@
         <button id="loginBtn" onclick="login()">登录</button>
         <div id="errorMsg" class="error"></div>
         <div id="infoMsg" class="info"></div>
-        <div id="debugInfo" class="debug"></div>
     </div>
 
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
         let db = null;
         let isReady = false;
-
-        function showDebug(msg) {
-            const debugDiv = document.getElementById('debugInfo');
-            debugDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + msg + '<br>';
-            console.log(msg);
-        }
 
         function showInfo(msg) {
             const infoDiv = document.getElementById('infoMsg');
@@ -105,43 +86,35 @@
 
         async function init() {
             setButtonEnabled(false);
-            showDebug('开始初始化...');
-            
-            // 等待 SDK 加载（与好评网站相同）
-            let retry = 0;
-            while (typeof cloudbase === 'undefined' && retry < 50) {
-                await new Promise(r => setTimeout(r, 100));
-                retry++;
+            // 等待 SDK 加载（与好评网站相同方式）
+            if (typeof cloudbase === 'undefined') {
+                await new Promise(resolve => {
+                    let count = 0;
+                    const check = setInterval(() => {
+                        if (typeof cloudbase !== 'undefined' || count > 100) {
+                            clearInterval(check);
+                            resolve();
+                        }
+                        count++;
+                    }, 100);
+                });
             }
             if (typeof cloudbase === 'undefined') {
-                showDebug('SDK 加载超时');
                 showError('SDK 加载失败，请刷新页面重试');
                 return;
             }
-            showDebug('SDK 已加载');
-            
             try {
-                // 完全按照好评网站的方式初始化
                 const app = cloudbase.init({ env: ENV_ID });
                 db = app.database();
-                showDebug('数据库实例创建成功');
-                
-                // 使用与好评网站完全相同的查询方式（不加 where 条件测试）
+                // 测试连接（与好评网站完全相同）
                 const testRes = await db.collection('sales').limit(1).get();
-                showDebug('测试查询成功，返回 ' + testRes.data.length + ' 条数据');
-                if (testRes.data.length === 0) {
-                    showDebug('⚠️ sales 集合为空，请添加管理员记录');
-                } else {
-                    showDebug('示例数据: ' + JSON.stringify(testRes.data[0]).substring(0, 100));
-                }
-                
                 isReady = true;
                 setButtonEnabled(true);
                 showInfo('✅ 系统已就绪，可以登录');
+                console.log('测试查询结果:', testRes);
             } catch (err) {
-                showDebug('初始化失败: ' + (err.message || JSON.stringify(err)));
-                console.error(err);
-                showError('初始化失败：' + (err.message || '未知错误'));
+                console.error('初始化错误:', err);
+                showError('初始化失败：' + (err.message || '请检查安全域名和数据库权限'));
                 setButtonEnabled(false);
             }
         }
@@ -159,7 +132,6 @@
             }
             setButtonEnabled(false);
             try {
-                // 使用与好评网站完全相同的查询方式
                 const res = await db.collection('sales').where({ phone: phone, password: pwd }).get();
                 if (res.data.length > 0) {
                     const sales = res.data[0];

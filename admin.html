@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>砚拓·管理员后台</title>
-    <!-- 使用官方稳定版 SDK -->
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
@@ -18,22 +17,46 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.05);
         }
         h2 { margin-bottom: 16px; color: #1e2a3a; font-size: 1.4rem; }
-        .stats { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-        .stat-card { background: #f8f9fc; border-radius: 20px; padding: 16px; min-width: 150px; }
-        .stat-number { font-size: 1.8rem; font-weight: bold; color: #2c3e50; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ecf0f1; }
-        th { background: #f8f9fc; font-weight: 600; }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 16px;
+            align-items: flex-end;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+            color: #5a6e7c;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #dce3ec;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
         button {
             background: #2c3e50;
             color: white;
             border: none;
             border-radius: 40px;
-            padding: 6px 12px;
+            padding: 8px 16px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
         }
-        button:disabled { background: #95a5a6; cursor: not-allowed; }
+        .btn-primary { background: #4f9eff; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 16px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th { background: #f8f9fc; font-weight: 600; }
+        .stats { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+        .stat-card { background: #f8f9fc; border-radius: 20px; padding: 16px; min-width: 150px; }
+        .stat-number { font-size: 1.8rem; font-weight: bold; color: #2c3e50; }
         .toast {
             position: fixed;
             bottom: 30px;
@@ -59,29 +82,70 @@
                 <button onclick="logout()">退出登录</button>
             </div>
         </div>
+
+        <!-- 添加销售员表单 -->
+        <div class="card">
+            <h2>➕ 添加销售员</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>姓名</label>
+                    <input type="text" id="newName" placeholder="姓名">
+                </div>
+                <div class="form-group">
+                    <label>手机号（登录账号）</label>
+                    <input type="tel" id="newPhone" placeholder="手机号">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="text" id="newPassword" placeholder="默认123456" value="123456">
+                </div>
+                <div class="form-group">
+                    <label>级别</label>
+                    <select id="newLevel">
+                        <option value="1">一级（市）</option>
+                        <option value="2">二级（区县）</option>
+                        <option value="3">三级（街道）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>上级ID（选填）</label>
+                    <select id="newParentId">
+                        <option value="">无上级</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button onclick="addSalesman()" class="btn-primary">添加销售员</button>
+                </div>
+            </div>
+        </div>
+
         <div class="card">
             <h2>📊 整体统计</h2>
             <div id="stats" class="stats"></div>
         </div>
+
         <div class="card">
             <h2>👥 销售员列表</h2>
             <div style="overflow-x: auto;">
                 <table id="salesTable">
                     <thead>
-                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th></tr>
+                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th>……
                     </thead>
-                    <tbody id="salesList"><tr><td colspan="7" class="loading">加载中...</td></tr></tbody>
+                    <tbody id="salesList">……
+                    </tbody>
                 </table>
             </div>
         </div>
+
         <div class="card">
             <h2>🏪 所有商家</h2>
             <div style="overflow-x: auto;">
                 <table id="allCustomersTable">
                     <thead>
-                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th></tr>
+                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th>……
                     </thead>
-                    <tbody id="allCustomersList"><tr><td colspan="7" class="loading">加载中...</td></tr></tbody>
+                    <tbody id="allCustomersList">……
+                    </tbody>
                 </table>
             </div>
             <button onclick="exportCSV()" style="margin-top: 16px;">📎 导出CSV</button>
@@ -94,6 +158,7 @@
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
         let db = null;
         let initSuccess = false;
+        let allSales = [];
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -109,7 +174,6 @@
             document.getElementById('mainContainer').style.display = 'none';
         }
 
-        // 初始化云开发
         async function initCloud() {
             if (typeof cloudbase === 'undefined') {
                 showError('SDK 加载失败，请刷新页面重试');
@@ -118,7 +182,6 @@
             try {
                 const app = cloudbase.init({ env: ENV_ID });
                 db = app.database();
-                // 测试连接
                 await db.collection('sales').limit(1).get();
                 initSuccess = true;
                 return true;
@@ -133,14 +196,11 @@
             }
         }
 
-        // 加载数据
         async function loadData() {
             if (!db) return;
             try {
-                // 获取所有销售员（排除管理员）
                 const salesRes = await db.collection('sales').get();
-                const sales = salesRes.data.filter(s => s.salesId !== 'admin');
-                // 获取所有商家
+                allSales = salesRes.data.filter(s => s.salesId !== 'admin');
                 const customersRes = await db.collection('customers').get();
                 const customers = customersRes.data;
 
@@ -150,10 +210,10 @@
 
                 // 渲染销售员表格
                 const salesTbody = document.getElementById('salesList');
-                if (sales.length === 0) {
+                if (allSales.length === 0) {
                     salesTbody.innerHTML = '<tr><td colspan="7">暂无销售员数据</td></tr>';
                 } else {
-                    salesTbody.innerHTML = sales.map(s => `
+                    salesTbody.innerHTML = allSales.map(s => `
                         <tr>
                             <td>${s.salesId}</td>
                             <td>${s.name}</td>
@@ -168,10 +228,10 @@
 
                 // 整体统计
                 const levelCount = {1:0,2:0,3:0};
-                sales.forEach(s => levelCount[s.level]++);
+                allSales.forEach(s => levelCount[s.level]++);
                 const totalCustomers = customers.length;
                 const statsHtml = `
-                    <div class="stat-card"><div class="stat-number">${sales.length}</div><div>总销售员</div></div>
+                    <div class="stat-card"><div class="stat-number">${allSales.length}</div><div>总销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${levelCount[1] || 0}</div><div>一级销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${levelCount[2] || 0}</div><div>二级销售员</div></div>
                     <div class="stat-card"><div class="stat-number">${levelCount[3] || 0}</div><div>三级销售员</div></div>
@@ -181,7 +241,7 @@
 
                 // 渲染商家表格
                 const salesMap = new Map();
-                sales.forEach(s => salesMap.set(s.salesId, s.name));
+                allSales.forEach(s => salesMap.set(s.salesId, s.name));
                 const customerRows = customers.map(c => `
                     <tr>
                         <td>${c.shopName}</td>
@@ -194,13 +254,59 @@
                     </tr>
                 `).join('');
                 document.getElementById('allCustomersList').innerHTML = customerRows || '<tr><td colspan="7">暂无商家数据</td></tr>';
+
+                // 刷新上级下拉框（排除管理员）
+                const parentSelect = document.getElementById('newParentId');
+                parentSelect.innerHTML = '<option value="">无上级</option>' + allSales.map(s => `<option value="${s.salesId}">${s.name} (${s.salesId})</option>`).join('');
             } catch (err) {
                 console.error(err);
                 showToast('加载数据失败，请刷新重试');
             }
         }
 
-        // 重置密码
+        // 添加销售员
+        async function addSalesman() {
+            const name = document.getElementById('newName').value.trim();
+            const phone = document.getElementById('newPhone').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+            const level = parseInt(document.getElementById('newLevel').value);
+            const parentId = document.getElementById('newParentId').value || null;
+
+            if (!name || !phone || !password) {
+                showToast('请填写姓名、手机号和密码');
+                return;
+            }
+            // 检查手机号是否已存在
+            const exist = await db.collection('sales').where({ phone }).get();
+            if (exist.data.length > 0) {
+                showToast('该手机号已注册');
+                return;
+            }
+            const salesId = Date.now().toString();
+            try {
+                await db.collection('sales').add({
+                    salesId,
+                    name,
+                    phone,
+                    password,
+                    level,
+                    parentId,
+                    createdAt: new Date().toISOString()
+                });
+                showToast('✅ 销售员添加成功');
+                // 清空表单
+                document.getElementById('newName').value = '';
+                document.getElementById('newPhone').value = '';
+                document.getElementById('newPassword').value = '123456';
+                document.getElementById('newLevel').value = '1';
+                document.getElementById('newParentId').value = '';
+                await loadData(); // 刷新列表
+            } catch (err) {
+                console.error(err);
+                showToast('添加失败，请重试');
+            }
+        }
+
         async function resetPassword(salesId) {
             const newPwd = prompt('请输入新密码（默认123456）', '123456');
             if (newPwd === null) return;
@@ -216,7 +322,6 @@
             }
         }
 
-        // 导出CSV
         function exportCSV() {
             const table = document.getElementById('allCustomersList');
             const rows = table.querySelectorAll('tr');
@@ -244,11 +349,9 @@
             window.location.href = 'login.html';
         }
 
-        // 页面启动
         (async () => {
             const ok = await initCloud();
             if (!ok) return;
-            // 验证登录身份
             const salesId = localStorage.getItem('salesId');
             if (salesId !== 'admin') {
                 showError('无权访问，请使用管理员账号登录');

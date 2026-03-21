@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>砚拓·销售员后台</title>
+    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
+        body { background: #f5f7fa; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        h2 { margin-bottom: 16px; color: #1e2a3a; font-size: 1.4rem; }
+        h3 { margin: 16px 0 12px; color: #2c3e50; font-size: 1.2rem; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 500; color: #2c3e50; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #dce3ec;
+            border-radius: 20px;
+            font-size: 0.95rem;
+        }
+        button {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+        .btn-primary { background: #4f9eff; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        th { background: #f8f9fc; font-weight: 600; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 20px; font-size: 0.75rem; background: #eef2f9; }
+        .qr-code { margin-top: 20px; text-align: center; padding: 16px; background: #f8f9fc; border-radius: 20px; display: none; }
+        .qr-code img { width: 150px; height: 150px; margin: 10px auto; }
+        .link-text { word-break: break-all; font-size: 0.8rem; color: #4f9eff; margin-top: 8px; }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            display: none;
+            z-index: 2000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>👤 欢迎，<span id="salesName"></span>（<span id="levelName"></span>级销售员）</h2>
+            <div style="text-align: right;">
+                <button onclick="logout()">退出登录</button>
+            </div>
+        </div>
+
+        <!-- 录入商家表单（销售员手动录入） -->
+        <div class="card">
+            <h2>📝 录入商家信息</h2>
+            <form id="customerForm">
+                <div class="form-group">
+                    <label>店名 *</label>
+                    <input type="text" id="shopName" required>
+                </div>
+                <div class="form-group">
+                    <label>地址 *</label>
+                    <input type="text" id="address" required>
+                </div>
+                <div class="form-group">
+                    <label>联系电话 *</label>
+                    <input type="tel" id="phone" required>
+                </div>
+                <div class="form-group">
+                    <label>类目 *</label>
+                    <select id="category" required>
+                        <option value="">请选择</option>
+                        <option value="网咖">网咖</option>
+                        <option value="餐饮">餐饮</option>
+                        <option value="零售">零售</option>
+                        <option value="休闲娱乐">休闲娱乐</option>
+                        <option value="其他">其他</option>
+                    </select>
+                    <div id="customCategoryGroup" style="display:none; margin-top:10px;">
+                        <input type="text" id="customCategory" placeholder="请输入具体类目">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea id="remark" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">✓ 提交商家信息</button>
+            </form>
+        </div>
+
+        <!-- 商家自助填表二维码（每个销售员专属） -->
+        <div class="card">
+            <h2>📱 商家自助填表二维码</h2>
+            <p>商家扫码后可直接填写信息，自动归入您的名下。</p>
+            <button onclick="generateQR()">生成我的专属二维码</button>
+            <div id="qrCodeResult" class="qr-code">
+                <div id="qrCodeImg"></div>
+                <div class="link-text" id="formLink"></div>
+            </div>
+        </div>
+
+        <!-- 发展下级（根据级别显示） -->
+        <div class="card" id="addSubordinatePanel" style="display:none;">
+            <h2>👥 发展下级销售员</h2>
+            <form id="subordinateForm">
+                <div class="form-group">
+                    <label>姓名</label>
+                    <input type="text" id="subName" required>
+                </div>
+                <div class="form-group">
+                    <label>手机号（登录账号）</label>
+                    <input type="tel" id="subPhone" required>
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="subPassword" value="123456" required>
+                </div>
+                <div class="form-group">
+                    <label>级别</label>
+                    <select id="subLevel" required>
+                        <option value="">请选择</option>
+                    </select>
+                </div>
+                <button type="submit">添加下级</button>
+            </form>
+        </div>
+
+        <!-- 业绩统计（商家列表） -->
+        <div class="card">
+            <h2>📊 业绩统计</h2>
+            <div id="statsInfo" style="margin-bottom: 16px; font-weight: bold;"></div>
+            <div style="overflow-x: auto;">
+                <table id="customerTable">
+                    <thead>
+                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th></tr>
+                    </thead>
+                    <tbody id="customerList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
+        const app = cloud.init({ env: ENV_ID });
+        const db = app.database();
+
+        let currentSales = {
+            id: localStorage.getItem('salesId'),
+            name: localStorage.getItem('salesName'),
+            level: parseInt(localStorage.getItem('salesLevel'))
+        };
+        if (!currentSales.id) window.location.href = 'login.html';
+
+        document.getElementById('salesName').innerText = currentSales.name;
+        const levelNames = {1:'一',2:'二',3:'三'};
+        document.getElementById('levelName').innerText = levelNames[currentSales.level];
+
+        // 显示/隐藏发展下级面板
+        if (currentSales.level === 1 || currentSales.level === 2) {
+            document.getElementById('addSubordinatePanel').style.display = 'block';
+            const subLevelSelect = document.getElementById('subLevel');
+            if (currentSales.level === 1) {
+                subLevelSelect.innerHTML = '<option value="">请选择</option><option value="2">二级销售员（区县）</option><option value="3">三级销售员（街道）</option>';
+            } else if (currentSales.level === 2) {
+                subLevelSelect.innerHTML = '<option value="">请选择</option><option value="3">三级销售员（街道）</option>';
+            }
+        }
+
+        // 类目自定义
+        const categorySelect = document.getElementById('category');
+        const customGroup = document.getElementById('customCategoryGroup');
+        const customInput = document.getElementById('customCategory');
+        categorySelect.addEventListener('change', () => {
+            if (categorySelect.value === '其他') {
+                customGroup.style.display = 'block';
+                customInput.required = true;
+            } else {
+                customGroup.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        });
+
+        // 提交商家信息（销售员手动录入）
+        document.getElementById('customerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shopName = document.getElementById('shopName').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            let category = categorySelect.value;
+            if (category === '其他') {
+                const custom = customInput.value.trim();
+                if (!custom) { showToast('请填写具体类目'); return; }
+                category = custom;
+            }
+            const remark = document.getElementById('remark').value.trim();
+            if (!shopName || !address || !phone) {
+                showToast('请填写所有带 * 的字段');
+                return;
+            }
+            try {
+                await db.collection('customers').add({
+                    shopName, address, phone, category, remark,
+                    salesId: currentSales.id,
+                    createdAt: new Date().toISOString()
+                });
+                showToast('✅ 商家信息已保存');
+                document.getElementById('customerForm').reset();
+                categorySelect.value = '';
+                customGroup.style.display = 'none';
+                loadCustomers(); // 刷新列表
+            } catch (err) {
+                console.error(err);
+                showToast('提交失败，请重试');
+            }
+        });
+
+        // 生成专属二维码（商家自助填表）
+        function generateQR() {
+            const formUrl = `${window.location.origin}/customer_form.html?salesId=${currentSales.id}`;
+            document.getElementById('formLink').innerHTML = `<a href="${formUrl}" target="_blank">${formUrl}</a>`;
+            const img = document.createElement('img');
+            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(formUrl)}`;
+            document.getElementById('qrCodeImg').innerHTML = '';
+            document.getElementById('qrCodeImg').appendChild(img);
+            document.getElementById('qrCodeResult').style.display = 'block';
+        }
+
+        // 添加下级销售员
+        document.getElementById('subordinateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('subName').value.trim();
+            const phone = document.getElementById('subPhone').value.trim();
+            const password = document.getElementById('subPassword').value.trim();
+            const level = parseInt(document.getElementById('subLevel').value);
+            if (!name || !phone || !password || !level) {
+                showToast('请填写完整信息');
+                return;
+            }
+            // 检查手机号是否已存在
+            const exist = await db.collection('sales').where({ phone: phone }).get();
+            if (exist.data.length > 0) {
+                showToast('该手机号已注册');
+                return;
+            }
+            const salesId = Date.now().toString(); // 简单生成ID
+            await db.collection('sales').add({
+                salesId, name, phone, password, level,
+                parentId: currentSales.id,
+                createdAt: new Date().toISOString()
+            });
+            showToast('✅ 下级销售员添加成功');
+            document.getElementById('subordinateForm').reset();
+        });
+
+        // 加载业绩（商家列表）
+        async function loadCustomers() {
+            let query = db.collection('customers');
+            // 根据级别查询可见的商家
+            if (currentSales.level === 1) {
+                // 一级：自己 + 所有下级的商家
+                // 需要递归获取所有下级ID，这里简化：直接查询所有商家，然后在前端筛选
+                const allSales = await db.collection('sales').get();
+                const allSalesMap = new Map();
+                allSales.data.forEach(s => allSalesMap.set(s.salesId, s));
+                // 获取所有下级ID（包括自己）
+                const subordinates = [];
+                function getSubordinates(parentId) {
+                    for (let s of allSales.data) {
+                        if (s.parentId === parentId) {
+                            subordinates.push(s.salesId);
+                            getSubordinates(s.salesId);
+                        }
+                    }
+                }
+                getSubordinates(currentSales.id);
+                subordinates.push(currentSales.id);
+                const res = await db.collection('customers').get();
+                const filtered = res.data.filter(c => subordinates.includes(c.salesId));
+                renderCustomers(filtered);
+                document.getElementById('statsInfo').innerHTML = `总录入商家数：${filtered.length}`;
+            } else if (currentSales.level === 2) {
+                // 二级：自己 + 三级下级
+                const allSales = await db.collection('sales').get();
+                const subordinates = [];
+                for (let s of allSales.data) {
+                    if (s.parentId === currentSales.id) {
+                        subordinates.push(s.salesId);
+                    }
+                }
+                subordinates.push(currentSales.id);
+                const res = await db.collection('customers').get();
+                const filtered = res.data.filter(c => subordinates.includes(c.salesId));
+                renderCustomers(filtered);
+                document.getElementById('statsInfo').innerHTML = `总录入商家数：${filtered.length}`;
+            } else {
+                // 三级：仅自己
+                const res = await db.collection('customers').where({ salesId: currentSales.id }).get();
+                renderCustomers(res.data);
+                document.getElementById('statsInfo').innerHTML = `总录入商家数：${res.data.length}`;
+            }
+        }
+
+        async function renderCustomers(customers) {
+            // 获取销售员姓名映射
+            const salesMap = new Map();
+            const allSales = await db.collection('sales').get();
+            allSales.data.forEach(s => salesMap.set(s.salesId, s.name));
+            const tbody = document.getElementById('customerList');
+            if (customers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
+                return;
+            }
+            tbody.innerHTML = customers.map(c => `
+                <tr>
+                    <td>${c.shopName}</td>
+                    <td>${c.address}</td>
+                    <td>${c.phone}</td>
+                    <td>${c.category}</td>
+                    <td>${c.remark || ''}</td>
+                    <td>${new Date(c.createdAt).toLocaleString()}</td>
+                    <td>${salesMap.get(c.salesId) || c.salesId}</td>
+                </tr>
+            `).join('');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        loadCustomers();
+    </script>
+</body>
+</html>

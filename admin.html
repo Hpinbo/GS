@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>砚拓·管理员后台</title>
+    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
+        body { background: #f5f7fa; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        h2 { margin-bottom: 16px; color: #1e2a3a; font-size: 1.4rem; }
+        .stats { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+        .stat-card { background: #f8f9fc; border-radius: 20px; padding: 16px; min-width: 150px; }
+        .stat-number { font-size: 1.8rem; font-weight: bold; color: #2c3e50; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        th { background: #f8f9fc; font-weight: 600; }
+        button {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            display: none;
+            z-index: 2000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>🔧 管理员控制台</h2>
+            <div style="text-align: right;">
+                <button onclick="logout()">退出登录</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 整体统计</h2>
+            <div id="stats" class="stats"></div>
+        </div>
+
+        <div class="card">
+            <h2>👥 销售员列表</h2>
+            <div style="overflow-x: auto;">
+                <table id="salesTable">
+                    <thead>
+                        <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th></tr>
+                    </thead>
+                    <tbody id="salesList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🏪 所有商家</h2>
+            <div style="overflow-x: auto;">
+                <table id="allCustomersTable">
+                    <thead>
+                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th></tr>
+                    </thead>
+                    <tbody id="allCustomersList"></tbody>
+                </table>
+            </div>
+            <button onclick="exportCSV()" style="margin-top: 16px;">📎 导出CSV</button>
+        </div>
+    </div>
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
+        const app = cloud.init({ env: ENV_ID });
+        const db = app.database();
+
+        // 检查登录
+        const salesId = localStorage.getItem('salesId');
+        if (salesId !== 'admin') {
+            window.location.href = 'login.html';
+        }
+
+        async function loadData() {
+            try {
+                const [salesRes, customersRes] = await Promise.all([
+                    db.collection('sales').get(),
+                    db.collection('customers').get()
+                ]);
+                const sales = salesRes.data.filter(s => s.salesId !== 'admin');
+                const customers = customersRes.data;
+
+                // 统计每个销售员的商家数
+                const countMap = new Map();
+                customers.forEach(c => {
+                    countMap.set(c.salesId, (countMap.get(c.salesId) || 0) + 1);
+                });
+
+                // 渲染销售员列表
+                const tbody = document.getElementById('salesList');
+                tbody.innerHTML = sales.map(s => `
+                    <tr>
+                        <td>${s.salesId}</td>
+                        <td>${s.name}</td>
+                        <td>${s.phone}</td>
+                        <td>${s.level === 1 ? '一级（市）' : s.level === 2 ? '二级（区县）' : '三级（街道）'}</td>
+                        <td>${s.parentId || '-'}</td>
+                        <td>${countMap.get(s.salesId) || 0}</td>
+                        <td><button onclick="resetPassword('${s.salesId}')">重置密码</button></td>
+                    </tr>
+                `).join('');
+
+                // 整体统计
+                const levelCount = {1:0,2:0,3:0};
+                sales.forEach(s => levelCount[s.level]++);
+                const totalCustomers = customers.length;
+                const statsHtml = `
+                    <div class="stat-card"><div class="stat-number">${sales.length}</div><div>总销售员</div></div>
+                    <div class="stat-card"><div class="stat-number">${levelCount[1] || 0}</div><div>一级销售员</div></div>
+                    <div class="stat-card"><div class="stat-number">${levelCount[2] || 0}</div><div>二级销售员</div></div>
+                    <div class="stat-card"><div class="stat-number">${levelCount[3] || 0}</div><div>三级销售员</div></div>
+                    <div class="stat-card"><div class="stat-number">${totalCustomers}</div><div>总商家数</div></div>
+                `;
+                document.getElementById('stats').innerHTML = statsHtml;
+
+                // 渲染所有商家
+                const salesMap = new Map();
+                sales.forEach(s => salesMap.set(s.salesId, s.name));
+                const customerRows = customers.map(c => `
+                    <tr>
+                        <td>${c.shopName}</td>
+                        <td>${c.address}</td>
+                        <td>${c.phone}</td>
+                        <td>${c.category}</td>
+                        <td>${c.remark || ''}</td>
+                        <td>${salesMap.get(c.salesId) || c.salesId}</td>
+                        <td>${new Date(c.createdAt).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+                document.getElementById('allCustomersList').innerHTML = customerRows || '<tr><td colspan="7">暂无数据</td></tr>';
+            } catch (err) {
+                console.error(err);
+                showToast('加载失败，请刷新重试');
+            }
+        }
+
+        async function resetPassword(salesId) {
+            const newPwd = prompt('请输入新密码（默认123456）', '123456');
+            if (newPwd === null) return;
+            try {
+                const res = await db.collection('sales').where({ salesId }).get();
+                if (res.data.length > 0) {
+                    await db.collection('sales').doc(res.data[0]._id).update({ password: newPwd });
+                    showToast('密码已重置');
+                }
+            } catch (err) {
+                showToast('操作失败');
+            }
+        }
+
+        function exportCSV() {
+            // 导出所有商家为CSV
+            const table = document.getElementById('allCustomersList');
+            const rows = table.querySelectorAll('tr');
+            let csv = '店名,地址,电话,类目,备注,录入销售员,录入时间\n';
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length) {
+                    const rowData = Array.from(cells).map(cell => `"${cell.innerText}"`).join(',');
+                    csv += rowData + '\n';
+                }
+            });
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.setAttribute('download', '商家数据.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

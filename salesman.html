@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>销售员后台</title>
-    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <script src="https://unpkg.com/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body { background: #f5f7fa; padding: 20px; }
@@ -17,7 +17,6 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.05);
         }
         h2 { margin-bottom: 16px; color: #1e2a3a; font-size: 1.4rem; }
-        h3 { margin: 16px 0 12px; color: #2c3e50; font-size: 1.2rem; }
         .form-group { margin-bottom: 16px; }
         label { display: block; margin-bottom: 6px; font-weight: 500; color: #2c3e50; }
         input, select, textarea {
@@ -49,7 +48,6 @@
             border-bottom: 1px solid #ecf0f1;
         }
         th { background: #f8f9fc; font-weight: 600; }
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 20px; font-size: 0.75rem; background: #eef2f9; }
         .qr-code { margin-top: 20px; text-align: center; padding: 16px; background: #f8f9fc; border-radius: 20px; display: none; }
         .qr-code img { width: 150px; height: 150px; margin: 10px auto; }
         .link-text { word-break: break-all; font-size: 0.8rem; color: #4f9eff; margin-top: 8px; }
@@ -77,7 +75,6 @@
             </div>
         </div>
 
-        <!-- 录入商家表单（销售员手动录入） -->
         <div class="card">
             <h2>📝 录入商家信息</h2>
             <form id="customerForm">
@@ -99,7 +96,7 @@
                         <option value="">请选择</option>
                         <option value="网咖">网咖</option>
                         <option value="餐饮">餐饮</option>
-                        <option value="维修">维修</option>
+                        <option value="零售">零售</option>
                         <option value="休闲娱乐">休闲娱乐</option>
                         <option value="其他">其他</option>
                     </select>
@@ -115,7 +112,6 @@
             </form>
         </div>
 
-        <!-- 商家自助填表二维码（每个销售员专属） -->
         <div class="card">
             <h2>📱 商家自助填表二维码</h2>
             <p>商家扫码后可直接填写信息，自动归入您的名下。</p>
@@ -126,7 +122,6 @@
             </div>
         </div>
 
-        <!-- 发展下级（根据级别显示） -->
         <div class="card" id="addSubordinatePanel" style="display:none;">
             <h2>👥 发展下级销售员</h2>
             <form id="subordinateForm">
@@ -152,7 +147,6 @@
             </form>
         </div>
 
-        <!-- 业绩统计（商家列表） -->
         <div class="card">
             <h2>📊 业绩统计</h2>
             <div id="statsInfo" style="margin-bottom: 16px; font-weight: bold;"></div>
@@ -170,30 +164,43 @@
 
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
-        const app = cloud.init({ env: ENV_ID });
-        const db = app.database();
+        let db = null;
+        let currentSales = {};
 
-        let currentSales = {
-            id: localStorage.getItem('salesId'),
-            name: localStorage.getItem('salesName'),
-            level: parseInt(localStorage.getItem('salesLevel'))
-        };
-        if (!currentSales.id) window.location.href = 'login.html';
-
-        document.getElementById('salesName').innerText = currentSales.name;
-        const levelNames = {1:'一',2:'二',3:'三'};
-        document.getElementById('levelName').innerText = levelNames[currentSales.level];
-
-        // 显示/隐藏发展下级面板
-        if (currentSales.level === 1 || currentSales.level === 2) {
-            document.getElementById('addSubordinatePanel').style.display = 'block';
-            const subLevelSelect = document.getElementById('subLevel');
-            if (currentSales.level === 1) {
-                subLevelSelect.innerHTML = '<option value="">请选择</option><option value="2">二级销售员（区县）</option><option value="3">三级销售员（街道）</option>';
-            } else if (currentSales.level === 2) {
-                subLevelSelect.innerHTML = '<option value="">请选择</option><option value="3">三级销售员（街道）</option>';
+        window.addEventListener('DOMContentLoaded', async function() {
+            if (typeof cloud === 'undefined') {
+                alert('系统初始化失败，请刷新页面重试');
+                return;
             }
-        }
+            const app = cloud.init({ env: ENV_ID });
+            db = app.database();
+
+            const id = localStorage.getItem('salesId');
+            const name = localStorage.getItem('salesName');
+            const level = localStorage.getItem('salesLevel');
+            if (!id) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentSales = { id, name, level: parseInt(level) };
+            document.getElementById('salesName').innerText = currentSales.name;
+            const levelNames = {1:'一',2:'二',3:'三'};
+            document.getElementById('levelName').innerText = levelNames[currentSales.level];
+
+            // 发展下级面板（1级可加2、3级；2级可加3级）
+            if (currentSales.level === 1 || currentSales.level === 2) {
+                document.getElementById('addSubordinatePanel').style.display = 'block';
+                const subLevelSelect = document.getElementById('subLevel');
+                if (currentSales.level === 1) {
+                    subLevelSelect.innerHTML = '<option value="">请选择</option><option value="2">二级销售员（区县）</option><option value="3">三级销售员（街道）</option>';
+                } else if (currentSales.level === 2) {
+                    subLevelSelect.innerHTML = '<option value="">请选择</option><option value="3">三级销售员（街道）</option>';
+                }
+            }
+
+            // 加载业绩
+            await loadCustomers();
+        });
 
         // 类目自定义
         const categorySelect = document.getElementById('category');
@@ -210,7 +217,7 @@
             }
         });
 
-        // 提交商家信息（销售员手动录入）
+        // 提交商家信息（手动录入）
         document.getElementById('customerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const shopName = document.getElementById('shopName').value.trim();
@@ -237,14 +244,14 @@
                 document.getElementById('customerForm').reset();
                 categorySelect.value = '';
                 customGroup.style.display = 'none';
-                loadCustomers(); // 刷新列表
+                await loadCustomers();
             } catch (err) {
                 console.error(err);
                 showToast('提交失败，请重试');
             }
         });
 
-        // 生成专属二维码（商家自助填表）
+        // 生成专属二维码
         function generateQR() {
             const formUrl = `${window.location.origin}/customer_form.html?salesId=${currentSales.id}`;
             document.getElementById('formLink').innerHTML = `<a href="${formUrl}" target="_blank">${formUrl}</a>`;
@@ -266,13 +273,12 @@
                 showToast('请填写完整信息');
                 return;
             }
-            // 检查手机号是否已存在
-            const exist = await db.collection('sales').where({ phone: phone }).get();
+            const exist = await db.collection('sales').where({ phone }).get();
             if (exist.data.length > 0) {
                 showToast('该手机号已注册');
                 return;
             }
-            const salesId = Date.now().toString(); // 简单生成ID
+            const salesId = Date.now().toString();
             await db.collection('sales').add({
                 salesId, name, phone, password, level,
                 parentId: currentSales.id,
@@ -284,15 +290,11 @@
 
         // 加载业绩（商家列表）
         async function loadCustomers() {
+            if (!db) return;
             let query = db.collection('customers');
-            // 根据级别查询可见的商家
             if (currentSales.level === 1) {
-                // 一级：自己 + 所有下级的商家
-                // 需要递归获取所有下级ID，这里简化：直接查询所有商家，然后在前端筛选
+                // 一级：自己 + 所有下级
                 const allSales = await db.collection('sales').get();
-                const allSalesMap = new Map();
-                allSales.data.forEach(s => allSalesMap.set(s.salesId, s));
-                // 获取所有下级ID（包括自己）
                 const subordinates = [];
                 function getSubordinates(parentId) {
                     for (let s of allSales.data) {
@@ -331,7 +333,6 @@
         }
 
         async function renderCustomers(customers) {
-            // 获取销售员姓名映射
             const salesMap = new Map();
             const allSales = await db.collection('sales').get();
             allSales.data.forEach(s => salesMap.set(s.salesId, s.name));
@@ -364,8 +365,6 @@
             localStorage.clear();
             window.location.href = 'login.html';
         }
-
-        loadCustomers();
     </script>
 </body>
 </html>

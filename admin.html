@@ -64,7 +64,7 @@
         <div class="card">
             <h2>管理员控制台</h2>
             <div style="text-align: right;">
-                <button onclick="logout()">退出登录</button>
+                <button onclick="window.logout()">退出登录</button>
             </div>
         </div>
 
@@ -91,7 +91,7 @@
                         <option value="3">三级销售员（街道）</option>
                     </select>
                 </div>
-                <button onclick="addSalesman()" style="margin-top: 22px;">添加销售员</button>
+                <button onclick="window.addSalesman()">添加销售员</button>
             </div>
         </div>
 
@@ -120,16 +120,16 @@
                     <tbody id="allCustomersList">……
                 ……
             </div>
-            <button onclick="exportCSV()" style="margin-top: 16px;">导出CSV</button>
+            <button onclick="window.exportCSV()">导出CSV</button>
         </div>
     </div>
     <div id="toast" class="toast"></div>
 
     <script>
         (function() {
-            const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
-            let db = null;
-            let isCloudReady = false;
+            var CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
+            var db = null;
+            var isCloudReady = false;
 
             function showToast(msg) {
                 var toast = document.getElementById('toast');
@@ -169,29 +169,26 @@
 
                     var salesTbody = document.getElementById('salesList');
                     if (sales.length === 0) {
-                        salesTbody.innerHTML = '<tr><td colspan="7">暂无销售员数据</td></tr>';
+                        salesTbody.innerHTML = '……
                     } else {
                         var salesHtml = '';
                         for (var i = 0; i < sales.length; i++) {
                             var s = sales[i];
                             var levelText = s.level === 1 ? '一级（市）' : (s.level === 2 ? '二级（区县）' : '三级（街道）');
-                            salesHtml += '<tr>';
-                            salesHtml += '<td>' + escapeHtml(s.salesId) + '</td>';
-                            salesHtml += '<td>' + escapeHtml(s.name) + '</td>';
-                            salesHtml += '<td>' + escapeHtml(s.phone) + '</td>';
-                            salesHtml += '<td>' + levelText + '</td>';
-                            salesHtml += '<td>' + (s.parentId || '-') + '</td>';
-                            salesHtml += '<td>' + (countMap.get(s.salesId) || 0) + '</td>';
-                            salesHtml += '<td><button onclick="resetPassword(\'' + escapeHtml(s.salesId) + '\')">重置密码</button></td>';
-                            salesHtml += '</tr>';
+                            salesHtml += '……
+                            salesHtml += '……
+                            salesHtml += '……
+                            salesHtml += '……
+                            salesHtml += '……
+                            salesHtml += '……
+                            salesHtml += '……
+                            salesHtml += '……
                         }
                         salesTbody.innerHTML = salesHtml;
                     }
 
                     var levelCount = {1:0,2:0,3:0};
-                    for (var i = 0; i < sales.length; i++) {
-                        levelCount[sales[i].level]++;
-                    }
+                    for (var i = 0; i < sales.length; i++) levelCount[sales[i].level]++;
                     var totalCustomers = customers.length;
                     var statsHtml = '';
                     statsHtml += '<div class="stat-card"><div class="stat-number">' + sales.length + '</div><div>总销售员</div></div>';
@@ -202,25 +199,20 @@
                     document.getElementById('stats').innerHTML = statsHtml;
 
                     var salesMap = new Map();
-                    for (var i = 0; i < sales.length; i++) {
-                        salesMap.set(sales[i].salesId, sales[i].name);
-                    }
+                    for (var i = 0; i < sales.length; i++) salesMap.set(sales[i].salesId, sales[i].name);
                     var customerRows = '';
                     for (var i = 0; i < customers.length; i++) {
                         var c = customers[i];
-                        customerRows += '<tr>';
-                        customerRows += '<td>' + escapeHtml(c.shopName) + '</td>';
-                        customerRows += '<td>' + escapeHtml(c.address) + '</td>';
-                        customerRows += '<td>' + escapeHtml(c.phone) + '</td>';
-                        customerRows += '<td>' + escapeHtml(c.category) + '</td>';
-                        customerRows += '<td>' + escapeHtml(c.remark || '') + '</td>';
-                        customerRows += '<td>' + escapeHtml(salesMap.get(c.salesId) || c.salesId) + '</td>';
-                        customerRows += '<td>' + new Date(c.createdAt).toLocaleString() + '</td>';
-                        customerRows += '</tr>';
+                        customerRows += '……
+                        customerRows += '……
+                        customerRows += '……
+                        customerRows += '……
+                        customerRows += '……
+                        customerRows += '……
+                        customerRows += '……
+                        customerRows += '……
                     }
-                    if (customerRows === '') {
-                        customerRows = '<tr><td colspan="7">暂无商家数据</td></tr>';
-                    }
+                    if (customerRows === '') customerRows = '……
                     document.getElementById('allCustomersList').innerHTML = customerRows;
                 } catch (err) {
                     console.error(err);
@@ -265,7 +257,7 @@
                 }
             }
 
-            window.resetPassword = async function(salesId) {
+            async function resetPassword(salesId) {
                 if (!isCloudReady) { showToast('系统未就绪'); return; }
                 var newPwd = prompt('请输入新密码（默认123456）', '123456');
                 if (newPwd === null) return;
@@ -278,9 +270,9 @@
                 } catch (err) {
                     showToast('操作失败');
                 }
-            };
+            }
 
-            window.exportCSV = function() {
+            function exportCSV() {
                 var table = document.getElementById('allCustomersList');
                 var rows = table.querySelectorAll('tr');
                 var csv = '店名,地址,电话,类目,备注,录入销售员,录入时间\n';
@@ -303,16 +295,6 @@
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(url);
-            };
-
-            function escapeHtml(str) {
-                if (!str) return '';
-                return str.replace(/[&<>]/g, function(m) {
-                    if (m === '&') return '&amp;';
-                    if (m === '<') return '&lt;';
-                    if (m === '>') return '&gt;';
-                    return m;
-                });
             }
 
             function logout() {
@@ -320,6 +302,13 @@
                 window.location.href = 'index.html';
             }
 
+            // 全局挂载
+            window.addSalesman = addSalesman;
+            window.logout = logout;
+            window.resetPassword = resetPassword;
+            window.exportCSV = exportCSV;
+
+            // 启动
             (async function() {
                 await initCloud();
                 if (!isCloudReady) return;

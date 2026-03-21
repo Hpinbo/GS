@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>商家信息填写</title>
-    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <script src="https://unpkg.com/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body {
@@ -82,7 +82,7 @@
                     <option value="">请选择</option>
                     <option value="网咖">网咖</option>
                     <option value="餐饮">餐饮</option>
-                    <option value="维修">维修</option>
+                    <option value="零售">零售</option>
                     <option value="休闲娱乐">休闲娱乐</option>
                     <option value="其他">其他</option>
                 </select>
@@ -101,15 +101,24 @@
 
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
-        const app = cloud.init({ env: ENV_ID });
-        const db = app.database();
+        let db = null;
+        let salesId = null;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const salesId = urlParams.get('salesId');
-        if (!salesId) {
-            alert('无效链接，请联系销售员');
-            throw new Error('缺少销售员ID');
-        }
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof cloud === 'undefined') {
+                alert('系统初始化失败，请刷新页面重试');
+                return;
+            }
+            const app = cloud.init({ env: ENV_ID });
+            db = app.database();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            salesId = urlParams.get('salesId');
+            if (!salesId) {
+                alert('无效链接，请联系销售员');
+                throw new Error('缺少销售员ID');
+            }
+        });
 
         const categorySelect = document.getElementById('category');
         const customGroup = document.getElementById('customCategoryGroup');

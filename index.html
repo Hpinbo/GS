@@ -80,35 +80,34 @@
         }
 
         async function initCloud() {
+            // 等待 SDK 加载
             if (typeof cloudbase === 'undefined') {
-                document.getElementById('errorMsg').innerText = 'SDK 加载失败，请刷新页面重试';
-                setLoginButton(true, '初始化失败');
-                return false;
+                await new Promise(resolve => {
+                    const check = setInterval(() => {
+                        if (typeof cloudbase !== 'undefined') {
+                            clearInterval(check);
+                            resolve();
+                        }
+                    }, 100);
+                });
             }
             try {
                 const app = cloudbase.init({ env: ENV_ID });
                 db = app.database();
-                // 测试连接
                 await db.collection('sales').limit(1).get();
                 initSuccess = true;
                 setLoginButton(false);
                 showInfo('✅ 系统已就绪，可以登录');
-                return true;
             } catch (err) {
-                console.error('初始化失败', err);
-                let errorMsg = '数据库初始化失败：';
-                if (err.message && err.message.includes('env')) errorMsg += '环境ID错误，请检查';
-                else if (err.message && err.message.includes('permission')) errorMsg += '权限不足，请检查安全域名或数据库权限';
-                else errorMsg += err.message || '未知错误';
-                document.getElementById('errorMsg').innerText = errorMsg;
+                console.error(err);
+                document.getElementById('errorMsg').innerText = '初始化失败：' + (err.message || '请检查安全域名和数据库权限');
                 setLoginButton(true, '初始化失败');
-                return false;
             }
         }
 
         async function login() {
             if (!initSuccess) {
-                document.getElementById('errorMsg').innerText = '系统未就绪，请稍后再试或刷新页面';
+                document.getElementById('errorMsg').innerText = '系统未就绪，请稍后再试';
                 return;
             }
             const phone = document.getElementById('phone').value.trim();
@@ -136,7 +135,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById('errorMsg').innerText = '登录失败，请检查网络或数据库权限';
+                document.getElementById('errorMsg').innerText = '登录失败，请检查网络';
                 setLoginButton(false);
             }
         }

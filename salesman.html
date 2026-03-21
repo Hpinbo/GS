@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>砚拓·销售员后台</title>
+    <link rel="preconnect" href="https://static.cloudbase.net">
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
@@ -156,220 +157,251 @@
                         <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th>……
                     </thead>
                     <tbody id="customerList"></tbody>
-                ……
+                </table>
             </div>
         </div>
     </div>
     <div id="toast" class="toast"></div>
 
     <script>
-        const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
-        let db = null;
-        let currentSales = {};
+        (function() {
+            // ================= 腾讯云 Cloudbase 配置（与好评宝一致） =================
+            const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
+            let db = null;
+            let isCloudReady = false;
+            let currentSales = null;
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
-        }
-
-        async function initCloud() {
-            if (typeof cloudbase === 'undefined') {
-                alert('SDK 加载失败，请刷新页面重试');
-                return false;
+            // 工具函数
+            function showToast(msg) {
+                const toast = document.getElementById('toast');
+                toast.textContent = msg;
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 3000);
             }
-            try {
-                const app = cloudbase.init({ env: ENV_ID });
-                db = app.database();
-                await db.collection('sales').limit(1).get();
-                return true;
-            } catch (err) {
-                console.error(err);
-                alert('初始化失败：' + (err.message || '请检查网络'));
-                return false;
-            }
-        }
 
-        async function loadSalesmanData() {
-            const id = localStorage.getItem('salesId');
-            const name = localStorage.getItem('salesName');
-            const level = localStorage.getItem('salesLevel');
-            if (!id) {
-                window.location.href = 'login.html';
-                return;
-            }
-            currentSales = { id, name, level: parseInt(level) };
-            document.getElementById('salesName').innerText = currentSales.name;
-            const levelNames = {1:'一',2:'二',3:'三'};
-            document.getElementById('levelName').innerText = levelNames[currentSales.level];
-
-            if (currentSales.level === 1 || currentSales.level === 2) {
-                document.getElementById('addSubordinatePanel').style.display = 'block';
-                const subLevelSelect = document.getElementById('subLevel');
-                if (currentSales.level === 1) {
-                    subLevelSelect.innerHTML = '<option value="">请选择</option><option value="2">二级销售员（区县）</option><option value="3">三级销售员（街道）</option>';
-                } else {
-                    subLevelSelect.innerHTML = '<option value="">请选择</option><option value="3">三级销售员（街道）</option>';
+            // 云初始化（完全复制好评宝的 initCloud 逻辑）
+            async function initCloud() {
+                try {
+                    const app = cloudbase.init({ env: CLOUD_ENV });
+                    await app.auth().signInAnonymously();  // 关键！必须匿名登录
+                    db = app.database();
+                    isCloudReady = true;
+                    console.log('✅ 云数据库初始化成功');
+                } catch (err) {
+                    console.error('❌ 云数据库初始化失败', err);
+                    isCloudReady = false;
+                    alert('初始化失败：' + (err.message || '请检查环境ID或匿名登录是否开启'));
                 }
             }
-            await loadCustomers();
-        }
 
-        const categorySelect = document.getElementById('category');
-        const customGroup = document.getElementById('customCategoryGroup');
-        const customInput = document.getElementById('customCategory');
-        categorySelect.addEventListener('change', () => {
-            if (categorySelect.value === '其他') {
-                customGroup.style.display = 'block';
-                customInput.required = true;
-            } else {
-                customGroup.style.display = 'none';
-                customInput.required = false;
-                customInput.value = '';
+            // 检查登录态并加载销售员信息
+            function checkLogin() {
+                const id = localStorage.getItem('salesId');
+                const name = localStorage.getItem('salesName');
+                const level = localStorage.getItem('salesLevel');
+                if (!id) {
+                    window.location.href = 'index.html';
+                    return false;
+                }
+                currentSales = { id, name, level: parseInt(level) };
+                document.getElementById('salesName').innerText = currentSales.name;
+                const levelNames = {1:'一',2:'二',3:'三'};
+                document.getElementById('levelName').innerText = levelNames[currentSales.level];
+                return true;
             }
-        });
 
-        document.getElementById('customerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const shopName = document.getElementById('shopName').value.trim();
-            const address = document.getElementById('address').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            let category = categorySelect.value;
-            if (category === '其他') {
-                const custom = customInput.value.trim();
-                if (!custom) { showToast('请填写具体类目'); return; }
-                category = custom;
-            }
-            const remark = document.getElementById('remark').value.trim();
-            if (!shopName || !address || !phone) {
-                showToast('请填写所有带 * 的字段');
-                return;
-            }
-            try {
-                await db.collection('customers').add({
-                    shopName, address, phone, category, remark,
-                    salesId: currentSales.id,
-                    createdAt: new Date().toISOString()
-                });
-                showToast('✅ 商家信息已保存');
-                document.getElementById('customerForm').reset();
-                categorySelect.value = '';
-                customGroup.style.display = 'none';
+            // 加载销售员后台数据（商家列表、下级权限等）
+            async function loadData() {
+                if (!db || !isCloudReady) return;
+                // 显示发展下级面板
+                if (currentSales.level === 1 || currentSales.level === 2) {
+                    document.getElementById('addSubordinatePanel').style.display = 'block';
+                    const subLevelSelect = document.getElementById('subLevel');
+                    if (currentSales.level === 1) {
+                        subLevelSelect.innerHTML = '<option value="">请选择</option><option value="2">二级销售员（区县）</option><option value="3">三级销售员（街道）</option>';
+                    } else {
+                        subLevelSelect.innerHTML = '<option value="">请选择</option><option value="3">三级销售员（街道）</option>';
+                    }
+                }
                 await loadCustomers();
-            } catch (err) {
-                console.error(err);
-                showToast('提交失败，请重试');
             }
-        });
 
-        function generateQR() {
-            const formUrl = `${window.location.origin}/customer_form.html?salesId=${currentSales.id}`;
-            document.getElementById('formLink').innerHTML = `<a href="${formUrl}" target="_blank">${formUrl}</a>`;
-            const img = document.createElement('img');
-            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(formUrl)}`;
-            document.getElementById('qrCodeImg').innerHTML = '';
-            document.getElementById('qrCodeImg').appendChild(img);
-            document.getElementById('qrCodeResult').style.display = 'block';
-        }
-
-        document.getElementById('subordinateForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('subName').value.trim();
-            const phone = document.getElementById('subPhone').value.trim();
-            const password = document.getElementById('subPassword').value.trim();
-            const level = parseInt(document.getElementById('subLevel').value);
-            if (!name || !phone || !password || !level) {
-                showToast('请填写完整信息');
-                return;
-            }
-            const exist = await db.collection('sales').where({ phone }).get();
-            if (exist.data.length > 0) {
-                showToast('该手机号已注册');
-                return;
-            }
-            const salesId = Date.now().toString();
-            try {
-                await db.collection('sales').add({
-                    salesId, name, phone, password, level,
-                    parentId: currentSales.id,
-                    createdAt: new Date().toISOString()
-                });
-                showToast('✅ 下级销售员添加成功');
-                document.getElementById('subordinateForm').reset();
-            } catch (err) {
-                console.error(err);
-                showToast('添加失败，请重试');
-            }
-        });
-
-        async function loadCustomers() {
-            if (!db) return;
-            if (currentSales.level === 1) {
-                const allSales = await db.collection('sales').get();
+            // 获取下级ID列表（递归）
+            async function getSubordinateIds() {
+                const allSalesRes = await db.collection('sales').get();
+                const allSales = allSalesRes.data;
                 const subordinates = [];
-                function getSubordinates(parentId) {
-                    for (let s of allSales.data) {
+                function collect(parentId) {
+                    for (let s of allSales) {
                         if (s.parentId === parentId) {
                             subordinates.push(s.salesId);
-                            getSubordinates(s.salesId);
+                            collect(s.salesId);
                         }
                     }
                 }
-                getSubordinates(currentSales.id);
+                collect(currentSales.id);
                 subordinates.push(currentSales.id);
-                const res = await db.collection('customers').get();
-                const filtered = res.data.filter(c => subordinates.includes(c.salesId));
-                renderCustomers(filtered);
-                document.getElementById('statsInfo').innerHTML = `总录入商家数：${filtered.length}`;
-            } else if (currentSales.level === 2) {
-                const allSales = await db.collection('sales').get();
-                const subordinates = [];
-                for (let s of allSales.data) {
-                    if (s.parentId === currentSales.id) subordinates.push(s.salesId);
+                return subordinates;
+            }
+
+            // 加载商家列表（根据权限）
+            async function loadCustomers() {
+                if (!db) return;
+                try {
+                    let customers = [];
+                    if (currentSales.level === 1) {
+                        const subordinates = await getSubordinateIds();
+                        const allCustomers = await db.collection('customers').get();
+                        customers = allCustomers.data.filter(c => subordinates.includes(c.salesId));
+                    } else if (currentSales.level === 2) {
+                        const allSales = await db.collection('sales').get();
+                        const subordinates = [];
+                        for (let s of allSales.data) {
+                            if (s.parentId === currentSales.id) subordinates.push(s.salesId);
+                        }
+                        subordinates.push(currentSales.id);
+                        const allCustomers = await db.collection('customers').get();
+                        customers = allCustomers.data.filter(c => subordinates.includes(c.salesId));
+                    } else {
+                        const res = await db.collection('customers').where({ salesId: currentSales.id }).get();
+                        customers = res.data;
+                    }
+                    renderCustomers(customers);
+                    document.getElementById('statsInfo').innerHTML = `总录入商家数：${customers.length}`;
+                } catch (err) {
+                    console.error(err);
+                    showToast('加载商家列表失败');
                 }
-                subordinates.push(currentSales.id);
-                const res = await db.collection('customers').get();
-                const filtered = res.data.filter(c => subordinates.includes(c.salesId));
-                renderCustomers(filtered);
-                document.getElementById('statsInfo').innerHTML = `总录入商家数：${filtered.length}`;
-            } else {
-                const res = await db.collection('customers').where({ salesId: currentSales.id }).get();
-                renderCustomers(res.data);
-                document.getElementById('statsInfo').innerHTML = `总录入商家数：${res.data.length}`;
             }
-        }
 
-        async function renderCustomers(customers) {
-            const salesMap = new Map();
-            const allSales = await db.collection('sales').get();
-            allSales.data.forEach(s => salesMap.set(s.salesId, s.name));
-            const tbody = document.getElementById('customerList');
-            if (customers.length === 0) {
-                tbody.innerHTML = '……
-                return;
+            async function renderCustomers(customers) {
+                const salesMap = new Map();
+                const allSales = await db.collection('sales').get();
+                allSales.data.forEach(s => salesMap.set(s.salesId, s.name));
+                const tbody = document.getElementById('customerList');
+                if (customers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = customers.map(c => `
+                    <tr>
+                        <td>${c.shopName}</td>
+                        <td>${c.address}</td>
+                        <td>${c.phone}</td>
+                        <td>${c.category}</td>
+                        <td>${c.remark || ''}</td>
+                        <td>${new Date(c.createdAt).toLocaleString()}</td>
+                        <td>${salesMap.get(c.salesId) || c.salesId}</td>
+                    </tr>
+                `).join('');
             }
-            tbody.innerHTML = customers.map(c => `
-                <tr>
-                    <td>${c.shopName}</td><td>${c.address}</td><td>${c.phone}</td>
-                    <td>${c.category}</td><td>${c.remark || ''}</td>
-                    <td>${new Date(c.createdAt).toLocaleString()}</td>
-                    <td>${salesMap.get(c.salesId) || c.salesId}</td>
-                ……
-            `).join('');
-        }
 
-        function logout() {
-            localStorage.clear();
-            const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
-            window.location.href = baseUrl + 'login.html';
-        }
+            // 录入商家
+            document.getElementById('customerForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const shopName = document.getElementById('shopName').value.trim();
+                const address = document.getElementById('address').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                let category = document.getElementById('category').value;
+                const customInput = document.getElementById('customCategory');
+                if (category === '其他') {
+                    const custom = customInput.value.trim();
+                    if (!custom) { showToast('请填写具体类目'); return; }
+                    category = custom;
+                }
+                const remark = document.getElementById('remark').value.trim();
+                if (!shopName || !address || !phone) {
+                    showToast('请填写所有带 * 的字段');
+                    return;
+                }
+                try {
+                    await db.collection('customers').add({
+                        shopName, address, phone, category, remark,
+                        salesId: currentSales.id,
+                        createdAt: new Date().toISOString()
+                    });
+                    showToast('✅ 商家信息已保存');
+                    document.getElementById('customerForm').reset();
+                    document.getElementById('category').value = '';
+                    document.getElementById('customCategoryGroup').style.display = 'none';
+                    await loadCustomers();
+                } catch (err) {
+                    console.error(err);
+                    showToast('提交失败，请重试');
+                }
+            });
 
-        (async () => {
-            const ok = await initCloud();
-            if (!ok) return;
-            document.getElementById('mainContainer').style.display = 'block';
-            await loadSalesmanData();
+            // 生成二维码
+            function generateQR() {
+                const formUrl = `${window.location.origin}/customer_form.html?salesId=${currentSales.id}`;
+                document.getElementById('formLink').innerHTML = `<a href="${formUrl}" target="_blank">${formUrl}</a>`;
+                const img = document.createElement('img');
+                img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(formUrl)}`;
+                document.getElementById('qrCodeImg').innerHTML = '';
+                document.getElementById('qrCodeImg').appendChild(img);
+                document.getElementById('qrCodeResult').style.display = 'block';
+            }
+
+            // 添加下级销售员
+            document.getElementById('subordinateForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('subName').value.trim();
+                const phone = document.getElementById('subPhone').value.trim();
+                const password = document.getElementById('subPassword').value.trim();
+                const level = parseInt(document.getElementById('subLevel').value);
+                if (!name || !phone || !password || !level) {
+                    showToast('请填写完整信息');
+                    return;
+                }
+                const exist = await db.collection('sales').where({ phone }).get();
+                if (exist.data.length > 0) {
+                    showToast('该手机号已注册');
+                    return;
+                }
+                const salesId = Date.now().toString();
+                try {
+                    await db.collection('sales').add({
+                        salesId, name, phone, password, level,
+                        parentId: currentSales.id,
+                        createdAt: new Date().toISOString()
+                    });
+                    showToast('✅ 下级销售员添加成功');
+                    document.getElementById('subordinateForm').reset();
+                } catch (err) {
+                    console.error(err);
+                    showToast('添加失败，请重试');
+                }
+            });
+
+            // 类目自定义
+            const categorySelect = document.getElementById('category');
+            const customGroup = document.getElementById('customCategoryGroup');
+            const customInput = document.getElementById('customCategory');
+            categorySelect.addEventListener('change', () => {
+                if (categorySelect.value === '其他') {
+                    customGroup.style.display = 'block';
+                    customInput.required = true;
+                } else {
+                    customGroup.style.display = 'none';
+                    customInput.required = false;
+                    customInput.value = '';
+                }
+            });
+
+            // 退出登录
+            function logout() {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
+
+            // 启动
+            (async () => {
+                await initCloud();
+                if (!isCloudReady) return;
+                if (!checkLogin()) return;
+                document.getElementById('mainContainer').style.display = 'block';
+                await loadData();
+            })();
         })();
     </script>
 </body>

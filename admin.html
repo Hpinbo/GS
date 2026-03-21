@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>砚拓·管理员后台</title>
+    <title>管理员后台</title>
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
@@ -131,24 +131,16 @@
         }
 
         async function initCloud() {
-            let wait = 0;
-            while (typeof cloudbase === 'undefined' && wait < 30) {
-                await new Promise(r => setTimeout(r, 200));
-                wait++;
-            }
-            if (typeof cloudbase === 'undefined') {
-                alert('SDK 加载失败，请刷新页面重试');
-                return false;
-            }
             try {
-                const app = cloudbase.init({ env: ENV_ID, region: 'ap-shanghai' });
+                const app = cloudbase.init({ env: ENV_ID });
+                await app.auth().signInAnonymously();
                 db = app.database();
                 await db.collection('sales').limit(1).get();
                 initSuccess = true;
                 return true;
             } catch (err) {
                 console.error(err);
-                alert('初始化失败：' + (err.message || '请检查安全域名'));
+                alert('初始化失败：' + (err.message || '请检查安全域名或匿名登录'));
                 return false;
             }
         }
@@ -278,7 +270,6 @@
 
         function logout() {
             localStorage.clear();
-            // 关键修改：跳转到 index.html
             window.location.href = 'index.html';
         }
 

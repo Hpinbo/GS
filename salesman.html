@@ -139,6 +139,10 @@
                     <input type="password" id="subPassword" value="123456" required>
                 </div>
                 <div class="form-group">
+                    <label id="regionLabel">区域名称</label>
+                    <input type="text" id="subRegion" placeholder="请填写区域名称" required>
+                </div>
+                <div class="form-group" id="levelSelectGroup">
                     <label>级别</label>
                     <select id="subLevel" required>
                         <option value="">请选择</option>
@@ -157,7 +161,7 @@
                         <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th>……
                     </thead>
                     <tbody id="customerList"></tbody>
-                </table>
+                ……
             </div>
         </div>
     </div>
@@ -165,13 +169,11 @@
 
     <script>
         (function() {
-            // ================= 腾讯云 Cloudbase 配置（与好评宝一致） =================
             const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
             let db = null;
             let isCloudReady = false;
             let currentSales = null;
 
-            // 工具函数
             function showToast(msg) {
                 const toast = document.getElementById('toast');
                 toast.textContent = msg;
@@ -179,22 +181,20 @@
                 setTimeout(() => { toast.style.display = 'none'; }, 3000);
             }
 
-            // 云初始化（完全复制好评宝的 initCloud 逻辑）
             async function initCloud() {
                 try {
                     const app = cloudbase.init({ env: CLOUD_ENV });
-                    await app.auth().signInAnonymously();  // 关键！必须匿名登录
+                    await app.auth().signInAnonymously();
                     db = app.database();
                     isCloudReady = true;
                     console.log('✅ 云数据库初始化成功');
                 } catch (err) {
                     console.error('❌ 云数据库初始化失败', err);
-                    isCloudReady = false;
                     alert('初始化失败：' + (err.message || '请检查环境ID或匿名登录是否开启'));
+                    isCloudReady = false;
                 }
             }
 
-            // 检查登录态并加载销售员信息
             function checkLogin() {
                 const id = localStorage.getItem('salesId');
                 const name = localStorage.getItem('salesName');
@@ -210,23 +210,24 @@
                 return true;
             }
 
-            // 加载销售员后台数据（商家列表、下级权限等）
             async function loadData() {
                 if (!db || !isCloudReady) return;
-                // 显示发展下级面板
                 if (currentSales.level === 1 || currentSales.level === 2) {
                     document.getElementById('addSubordinatePanel').style.display = 'block';
                     const subLevelSelect = document.getElementById('subLevel');
+                    const regionLabel = document.getElementById('regionLabel');
                     if (currentSales.level === 1) {
-                        subLevelSelect.innerHTML = '<option value="">请选择</option><option value="2">二级销售员（区县）</option><option value="3">三级销售员（街道）</option>';
-                    } else {
-                        subLevelSelect.innerHTML = '<option value="">请选择</option><option value="3">三级销售员（街道）</option>';
+                        subLevelSelect.innerHTML = '<option value="2">二级销售员（区县）</option>';
+                        regionLabel.innerText = '区域名称（如：西湖区）';
+                    } else if (currentSales.level === 2) {
+                        subLevelSelect.innerHTML = '<option value="3">三级销售员（街道）</option>';
+                        regionLabel.innerText = '区域名称（如：文新街道）';
                     }
+                    subLevelSelect.disabled = true; // 让用户不用选择，但为了提交，我们自动赋值
                 }
                 await loadCustomers();
             }
 
-            // 获取下级ID列表（递归）
             async function getSubordinateIds() {
                 const allSalesRes = await db.collection('sales').get();
                 const allSales = allSalesRes.data;
@@ -244,7 +245,6 @@
                 return subordinates;
             }
 
-            // 加载商家列表（根据权限）
             async function loadCustomers() {
                 if (!db) return;
                 try {
@@ -280,23 +280,22 @@
                 allSales.data.forEach(s => salesMap.set(s.salesId, s.name));
                 const tbody = document.getElementById('customerList');
                 if (customers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
+                    tbody.innerHTML = '……
                     return;
                 }
                 tbody.innerHTML = customers.map(c => `
                     <tr>
-                        <td>${c.shopName}</td>
-                        <td>${c.address}</td>
-                        <td>${c.phone}</td>
-                        <td>${c.category}</td>
-                        <td>${c.remark || ''}</td>
+                        <td>${escapeHtml(c.shopName)}</td>
+                        <td>${escapeHtml(c.address)}</td>
+                        <td>${escapeHtml(c.phone)}</td>
+                        <td>${escapeHtml(c.category)}</td>
+                        <td>${escapeHtml(c.remark || '')}</td>
                         <td>${new Date(c.createdAt).toLocaleString()}</td>
-                        <td>${salesMap.get(c.salesId) || c.salesId}</td>
-                    </tr>
+                        <td>${escapeHtml(salesMap.get(c.salesId) || c.salesId)}</td>
+                    ……
                 `).join('');
             }
 
-            // 录入商家
             document.getElementById('customerForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const shopName = document.getElementById('shopName').value.trim();
@@ -331,7 +330,6 @@
                 }
             });
 
-            // 生成二维码
             function generateQR() {
                 const formUrl = `${window.location.origin}/customer_form.html?salesId=${currentSales.id}`;
                 document.getElementById('formLink').innerHTML = `<a href="${formUrl}" target="_blank">${formUrl}</a>`;
@@ -342,14 +340,17 @@
                 document.getElementById('qrCodeResult').style.display = 'block';
             }
 
-            // 添加下级销售员
             document.getElementById('subordinateForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const name = document.getElementById('subName').value.trim();
                 const phone = document.getElementById('subPhone').value.trim();
                 const password = document.getElementById('subPassword').value.trim();
-                const level = parseInt(document.getElementById('subLevel').value);
-                if (!name || !phone || !password || !level) {
+                const regionName = document.getElementById('subRegion').value.trim();
+                let level;
+                if (currentSales.level === 1) level = 2;
+                else if (currentSales.level === 2) level = 3;
+                else return;
+                if (!name || !phone || !password || !regionName) {
                     showToast('请填写完整信息');
                     return;
                 }
@@ -362,6 +363,7 @@
                 try {
                     await db.collection('sales').add({
                         salesId, name, phone, password, level,
+                        regionName,
                         parentId: currentSales.id,
                         createdAt: new Date().toISOString()
                     });
@@ -373,7 +375,6 @@
                 }
             });
 
-            // 类目自定义
             const categorySelect = document.getElementById('category');
             const customGroup = document.getElementById('customCategoryGroup');
             const customInput = document.getElementById('customCategory');
@@ -388,13 +389,21 @@
                 }
             });
 
-            // 退出登录
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+            }
+
             function logout() {
                 localStorage.clear();
                 window.location.href = 'index.html';
             }
 
-            // 启动
             (async () => {
                 await initCloud();
                 if (!isCloudReady) return;

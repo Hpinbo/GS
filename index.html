@@ -3,19 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>云开发连接测试</title>
-    <!-- 使用多个备用 CDN 确保加载成功 -->
-    <script src="https://unpkg.com/@cloudbase/js-sdk@1.7.0/dist/cloudbase.full.js"></script>
-    <script>
-        // 如果上面的 CDN 失败，备用
-        window.onerror = function() {
-            document.getElementById('result').innerHTML = '主 CDN 加载失败，尝试备用...';
-            var script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.7.0/dist/cloudbase.full.js';
-            script.onload = function() { init(); };
-            document.head.appendChild(script);
-            return true;
-        };
-    </script>
+    <!-- 使用腾讯云官方 CDN，避免跟踪保护拦截 -->
+    <script src="https://tcb-sdk.tencentcloud.com/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
 </head>
 <body>
     <h2>云开发连接测试</h2>
@@ -38,7 +27,7 @@
             
             if (typeof cloudbase === 'undefined') {
                 log('❌ cloudbase 未定义，SDK 加载失败');
-                resultDiv.innerHTML = '❌ SDK 加载失败，请检查网络或手动刷新';
+                resultDiv.innerHTML = '❌ SDK 加载失败，请检查网络';
                 return;
             }
             
@@ -69,23 +58,9 @@
                 log('❌ 初始化失败: ' + (err.message || JSON.stringify(err)));
                 console.error('完整错误:', err);
                 resultDiv.innerHTML = '❌ 连接失败：' + (err.message || '未知错误');
-                
-                // 提供更详细的错误建议
-                if (err.message && err.message.includes('scope')) {
-                    detailDiv.innerHTML += '<br>⚠️ 检测到 scope 错误，可能原因：<br>';
-                    detailDiv.innerHTML += '1. 安全域名未正确配置（需添加 https://hpinbo.github.io）<br>';
-                    detailDiv.innerHTML += '2. 浏览器扩展（如广告拦截器）阻止了请求<br>';
-                    detailDiv.innerHTML += '3. 公司网络防火墙拦截了云开发 API<br>';
-                    detailDiv.innerHTML += '4. 尝试使用无痕模式或手机热点访问<br>';
-                } else if (err.message && err.message.includes('timeout')) {
-                    detailDiv.innerHTML += '<br>⚠️ 连接超时，请检查网络或更换网络环境';
-                } else if (err.message && err.message.includes('permission')) {
-                    detailDiv.innerHTML += '<br>⚠️ 权限错误，请检查数据库权限设置';
-                }
             }
         }
         
-        // 等待 DOM 加载完成后启动
         window.addEventListener('load', function() {
             setTimeout(init, 500);
         });

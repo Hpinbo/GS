@@ -277,10 +277,9 @@
         }
 
         function logout() {
-            localStorage.clear();
-            const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
-            window.location.href = baseUrl + 'index.html';
-        }
+    localStorage.clear();
+    window.location.href = 'index.html';  // 注意改为 index.html
+}
 
         (async () => {
             const ok = await initCloud();

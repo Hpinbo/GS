@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>砚拓·销售系统登录</title>
-     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body {
@@ -49,6 +49,7 @@
         }
         .error { color: #e74c3c; text-align: center; margin-top: 12px; font-size: 0.9rem; }
         .info { color: #f39c12; text-align: center; margin-top: 12px; font-size: 0.9rem; }
+        .retry { background: #4f9eff; margin-top: 12px; }
     </style>
 </head>
 <body>
@@ -59,6 +60,7 @@
         <button id="loginBtn" onclick="login()">登录</button>
         <div id="errorMsg" class="error"></div>
         <div id="infoMsg" class="info"></div>
+        <button id="retryBtn" class="retry" onclick="initCloud()" style="display: none;">重新初始化</button>
     </div>
 
     <script>
@@ -72,6 +74,13 @@
             setTimeout(() => { infoDiv.innerText = ''; }, 3000);
         }
 
+        function showError(msg, showRetry = false) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.innerText = msg;
+            const retryBtn = document.getElementById('retryBtn');
+            retryBtn.style.display = showRetry ? 'block' : 'none';
+        }
+
         function setLoginButton(disabled, text) {
             const btn = document.getElementById('loginBtn');
             btn.disabled = disabled;
@@ -82,25 +91,21 @@
         async function initCloud() {
             // 等待 SDK 加载
             if (typeof cloudbase === 'undefined') {
+                showError('SDK 加载中，请稍候...', false);
                 await new Promise(resolve => {
                     const check = setInterval(() => {
                         if (typeof cloudbase !== 'undefined') {
                             clearInterval(check);
                             resolve();
                         }
-                    }, 100);
+                    }, 200);
                 });
             }
-
-            // 确保环境 ID 非空
-            if (!ENV_ID || ENV_ID === 'good-reviews-3g35hh0i28b88e1b') {
-                // 这里保留，但实际不应该为空
-            }
-
             try {
-                const app = cloudbase.init({ env: ENV_ID });
+                // 使用指定区域（国内用户推荐）
+                const app = cloudbase.init({ env: ENV_ID, region: 'ap-shanghai' });
                 db = app.database();
-                // 测试连接
+                // 测试连接，获取一条数据验证权限
                 await db.collection('sales').limit(1).get();
                 initSuccess = true;
                 setLoginButton(false);
@@ -111,9 +116,9 @@
                 let errorMsg = '数据库初始化失败：';
                 if (err.message && err.message.includes('env')) errorMsg += '环境ID错误，请检查';
                 else if (err.message && err.message.includes('permission')) errorMsg += '权限不足，请检查安全域名或数据库权限';
-                else if (err.message && err.message.includes('scope')) errorMsg += 'SDK 初始化错误，请检查环境ID或网络';
+                else if (err.message && err.message.includes('scope')) errorMsg += 'SDK 初始化错误，请检查环境ID或网络，可尝试刷新页面或禁用浏览器扩展';
                 else errorMsg += err.message || '未知错误';
-                document.getElementById('errorMsg').innerText = errorMsg;
+                showError(errorMsg, true);
                 setLoginButton(true, '初始化失败');
                 return false;
             }
@@ -121,13 +126,13 @@
 
         async function login() {
             if (!initSuccess) {
-                document.getElementById('errorMsg').innerText = '系统未就绪，请稍后再试或刷新页面';
+                showError('系统未就绪，请稍后再试或点击"重新初始化"', true);
                 return;
             }
             const phone = document.getElementById('phone').value.trim();
             const pwd = document.getElementById('password').value.trim();
             if (!phone || !pwd) {
-                document.getElementById('errorMsg').innerText = '请输入手机号和密码';
+                showError('请输入手机号和密码');
                 return;
             }
             setLoginButton(true, '登录中...');
@@ -144,17 +149,16 @@
                         window.location.href = 'salesman.html';
                     }
                 } else {
-                    document.getElementById('errorMsg').innerText = '账号或密码错误';
+                    showError('账号或密码错误');
                     setLoginButton(false);
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById('errorMsg').innerText = '登录失败，请检查网络或数据库权限';
+                showError('登录失败，请检查网络或数据库权限');
                 setLoginButton(false);
             }
         }
 
-        // 页面加载后初始化
         window.addEventListener('load', initCloud);
     </script>
 </body>

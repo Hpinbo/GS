@@ -1,215 +1,33 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>砚拓·销售系统登录</title>
-    <!-- 使用官方 Web SDK 2.0 最新版 -->
-    <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
-    <style>
-        * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
-        body {
-            background: #f5f7fa;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .login-card {
-            background: white;
-            border-radius: 32px;
-            padding: 32px;
-            width: 100%;
-            max-width: 360px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-        }
-        h2 { margin-bottom: 24px; text-align: center; color: #1e2a3a; }
-        input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #dce3ec;
-            border-radius: 40px;
-            margin-bottom: 16px;
-            font-size: 1rem;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #2c3e50;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        button:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-        }
-        .error { color: #e74c3c; text-align: center; margin-top: 12px; font-size: 0.9rem; }
-        .info { color: #f39c12; text-align: center; margin-top: 12px; font-size: 0.9rem; }
-        .debug {
-            background: #f0f0f0;
-            padding: 10px;
-            margin-top: 16px;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            font-family: monospace;
-            word-break: break-all;
-            display: none;
-        }
-    </style>
+    <title>云开发连接测试</title>
+    <script src="https://web.sdk.qcloud.com/cloudbase/2.0.0/cloudbase.js"></script>
 </head>
 <body>
-    <div class="login-card">
-        <h2>销售系统登录</h2>
-        <input type="text" id="phone" placeholder="手机号" autocomplete="off">
-        <input type="password" id="password" placeholder="密码">
-        <button id="loginBtn" onclick="login()">登录</button>
-        <div id="errorMsg" class="error"></div>
-        <div id="infoMsg" class="info"></div>
-        <div id="debugInfo" class="debug"></div>
-    </div>
-
+    <div id="result">测试中...</div>
     <script>
         const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
-        let db = null;
-        let isReady = false;
-
-        function showDebug(msg) {
-            const debugDiv = document.getElementById('debugInfo');
-            debugDiv.style.display = 'block';
-            debugDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + msg + '<br>';
-            console.log(msg);
-        }
-
-        function showInfo(msg) {
-            const infoDiv = document.getElementById('infoMsg');
-            infoDiv.innerText = msg;
-            setTimeout(() => { if (infoDiv.innerText === msg) infoDiv.innerText = ''; }, 3000);
-        }
-
-        function showError(msg) {
-            const errorDiv = document.getElementById('errorMsg');
-            errorDiv.innerText = msg;
-        }
-
-        function setButtonEnabled(enabled) {
-            const btn = document.getElementById('loginBtn');
-            btn.disabled = !enabled;
-            btn.innerText = enabled ? '登录' : '初始化中...';
-        }
-
-        async function initCloud() {
-            setButtonEnabled(false);
-            showDebug('开始初始化云开发...');
-            
-            // 等待 SDK 加载（最多 15 秒）
-            let waitCount = 0;
-            while (typeof cloudbase === 'undefined' && waitCount < 75) {
-                await new Promise(r => setTimeout(r, 200));
-                waitCount++;
-                if (waitCount % 10 === 0) showDebug('等待 SDK 加载... (' + waitCount * 0.2 + 's)');
-            }
-            
+        const resultDiv = document.getElementById('result');
+        
+        (async () => {
+            resultDiv.innerHTML = '等待 SDK...';
             if (typeof cloudbase === 'undefined') {
-                showDebug('❌ SDK 加载超时');
-                showError('SDK 加载超时，请检查网络或刷新页面重试');
-                return false;
-            }
-            
-            showDebug('✅ SDK 已加载');
-            
-            try {
-                showDebug('调用 cloudbase.init({ env: "' + ENV_ID + '" })');
-                const app = cloudbase.init({
-                    env: ENV_ID,
-                    // 添加超时配置
-                    timeout: 15000
-                });
-                showDebug('init 成功');
-                
-                db = app.database();
-                showDebug('数据库实例创建成功');
-                
-                showDebug('测试数据库连接...');
-                const testResult = await db.collection('sales').limit(1).get();
-                showDebug('✅ 连接成功，返回 ' + testResult.data.length + ' 条数据');
-                
-                isReady = true;
-                setButtonEnabled(true);
-                showInfo('✅ 系统已就绪，可以登录');
-                return true;
-            } catch (err) {
-                showDebug('❌ 初始化失败: ' + (err.message || JSON.stringify(err)));
-                console.error('初始化错误:', err);
-                
-                let errorMsg = '';
-                if (err.message && err.message.includes('env')) {
-                    errorMsg = '环境ID错误，请检查';
-                } else if (err.message && err.message.includes('permission')) {
-                    errorMsg = '权限不足，请检查安全域名或数据库权限';
-                } else if (err.message && err.message.includes('timeout')) {
-                    errorMsg = '连接超时，请检查网络';
-                } else if (err.message && err.message.includes('scope')) {
-                    errorMsg = 'SDK 内部错误，请检查：1.安全域名是否配置 2.浏览器扩展是否拦截 3.尝试无痕模式';
-                } else {
-                    errorMsg = err.message || '未知错误';
-                }
-                showError('初始化失败：' + errorMsg);
-                setButtonEnabled(false);
-                return false;
-            }
-        }
-
-        async function login() {
-            if (!isReady) {
-                showError('系统未就绪，请稍后再试');
+                resultDiv.innerHTML = 'SDK 加载失败';
                 return;
             }
-            
-            const phone = document.getElementById('phone').value.trim();
-            const pwd = document.getElementById('password').value.trim();
-            if (!phone || !pwd) {
-                showError('请输入手机号和密码');
-                return;
-            }
-            
-            setButtonEnabled(false);
-            showInfo('登录中...');
-            
+            resultDiv.innerHTML = 'SDK 已加载，初始化中...';
             try {
-                showDebug('查询用户: phone=' + phone);
-                const res = await db.collection('sales').where({ phone: phone, password: pwd }).get();
-                showDebug('查询结果: ' + res.data.length + ' 条');
-                
-                if (res.data.length > 0) {
-                    const sales = res.data[0];
-                    localStorage.setItem('salesId', sales.salesId);
-                    localStorage.setItem('salesName', sales.name);
-                    localStorage.setItem('salesLevel', sales.level);
-                    showDebug('登录成功，跳转页面');
-                    if (sales.salesId === 'admin') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'salesman.html';
-                    }
-                } else {
-                    showError('账号或密码错误');
-                    setButtonEnabled(true);
-                }
+                const app = cloudbase.init({ env: ENV_ID });
+                const db = app.database();
+                resultDiv.innerHTML = '测试数据库连接...';
+                const res = await db.collection('sales').limit(1).get();
+                resultDiv.innerHTML = '✅ 成功！查到 ' + res.data.length + ' 条数据';
             } catch (err) {
-                showDebug('登录失败: ' + (err.message || JSON.stringify(err)));
+                resultDiv.innerHTML = '❌ 失败：' + err.message;
                 console.error(err);
-                showError('登录失败，请检查网络');
-                setButtonEnabled(true);
             }
-        }
-
-        // 页面加载后自动初始化
-        window.addEventListener('load', initCloud);
+        })();
     </script>
 </body>
 </html>

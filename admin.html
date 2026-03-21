@@ -32,7 +32,6 @@
             cursor: pointer;
             font-size: 0.8rem;
         }
-        button:disabled { background: #95a5a6; cursor: not-allowed; }
         .toast {
             position: fixed;
             bottom: 30px;
@@ -47,7 +46,6 @@
             z-index: 2000;
         }
         .error-msg { color: #e74c3c; text-align: center; margin: 20px; }
-        .loading { text-align: center; padding: 40px; color: #7f8c8d; }
         .form-group { margin-bottom: 16px; }
         .form-group input, .form-group select {
             width: 100%;
@@ -70,9 +68,8 @@
             </div>
         </div>
 
-        <!-- 添加销售员模块 -->
         <div class="card">
-            <h2>➕ 添加一级销售员</h2>
+            <h2>➕ 添加销售员</h2>
             <div class="add-salesman">
                 <div class="form-group">
                     <label>姓名</label>
@@ -110,7 +107,7 @@
                         <tr><th>ID</th><th>姓名</th><th>手机号</th><th>级别</th><th>上级ID</th><th>录入商家数</th><th>操作</th>……
                     </thead>
                     <tbody id="salesList">……
-                </table>
+                ……
             </div>
         </div>
         <div class="card">
@@ -121,7 +118,7 @@
                         <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入销售员</th><th>录入时间</th>……
                     </thead>
                     <tbody id="allCustomersList">……
-                </table>
+                ……
             </div>
             <button onclick="exportCSV()" style="margin-top: 16px;">📎 导出CSV</button>
         </div>
@@ -148,17 +145,21 @@
             document.getElementById('mainContainer').style.display = 'none';
         }
 
-        // 初始化云开发
         async function initCloud() {
             if (typeof cloudbase === 'undefined') {
-                showError('SDK 加载失败，请刷新页面重试');
-                return false;
+                await new Promise(resolve => {
+                    const check = setInterval(() => {
+                        if (typeof cloudbase !== 'undefined') {
+                            clearInterval(check);
+                            resolve();
+                        }
+                    }, 200);
+                });
             }
             try {
-                const app = cloudbase.init({ env: ENV_ID });
+                const app = cloudbase.init({ env: ENV_ID, region: 'ap-shanghai' });
                 db = app.database();
-                // 测试连接，使用 get() 而不是 limit(1).get() 避免空指针
-                await db.collection('sales').get();
+                await db.collection('sales').limit(1).get();
                 initSuccess = true;
                 return true;
             } catch (err) {
@@ -166,13 +167,13 @@
                 let errorMsg = '数据库初始化失败：';
                 if (err.message && err.message.includes('env')) errorMsg += '环境ID错误，请检查';
                 else if (err.message && err.message.includes('permission')) errorMsg += '权限不足，请检查安全域名或数据库权限';
+                else if (err.message && err.message.includes('scope')) errorMsg += 'SDK 初始化错误，请检查环境ID或网络，可尝试刷新页面或禁用浏览器扩展';
                 else errorMsg += err.message || '未知错误';
                 showError(errorMsg);
                 return false;
             }
         }
 
-        // 加载数据
         async function loadData() {
             if (!db) return;
             try {
@@ -186,7 +187,7 @@
 
                 const salesTbody = document.getElementById('salesList');
                 if (sales.length === 0) {
-                    salesTbody.innerHTML = '<tr><td colspan="7">暂无销售员数据</td></tr>';
+                    salesTbody.innerHTML = '……
                 } else {
                     salesTbody.innerHTML = sales.map(s => `
                         <tr>
@@ -226,14 +227,13 @@
                         <td>${new Date(c.createdAt).toLocaleString()}</td>
                     </tr>
                 `).join('');
-                document.getElementById('allCustomersList').innerHTML = customerRows || '<tr><td colspan="7">暂无商家数据</td></tr>';
+                document.getElementById('allCustomersList').innerHTML = customerRows || '……
             } catch (err) {
                 console.error(err);
                 showToast('加载数据失败，请刷新重试');
             }
         }
 
-        // 添加销售员
         async function addSalesman() {
             const name = document.getElementById('newName').value.trim();
             const phone = document.getElementById('newPhone').value.trim();
@@ -243,31 +243,29 @@
                 showToast('请填写姓名、手机号和密码');
                 return;
             }
-            // 检查手机号是否已存在
             const exist = await db.collection('sales').where({ phone }).get();
             if (exist.data.length > 0) {
                 showToast('该手机号已注册');
                 return;
             }
-            const salesId = Date.now().toString(); // 简单生成唯一ID
+            const salesId = Date.now().toString();
             try {
                 await db.collection('sales').add({
                     salesId, name, phone, password, level,
-                    parentId: null, // 管理员添加的销售员没有上级
+                    parentId: null,
                     createdAt: new Date().toISOString()
                 });
                 showToast('✅ 销售员添加成功');
                 document.getElementById('newName').value = '';
                 document.getElementById('newPhone').value = '';
                 document.getElementById('newPassword').value = '123456';
-                await loadData(); // 刷新列表
+                await loadData();
             } catch (err) {
                 console.error(err);
                 showToast('添加失败，请重试');
             }
         }
 
-        // 重置密码
         async function resetPassword(salesId) {
             const newPwd = prompt('请输入新密码（默认123456）', '123456');
             if (newPwd === null) return;
@@ -278,12 +276,10 @@
                     showToast('密码已重置');
                 }
             } catch (err) {
-                console.error(err);
                 showToast('操作失败');
             }
         }
 
-        // 导出CSV
         function exportCSV() {
             const table = document.getElementById('allCustomersList');
             const rows = table.querySelectorAll('tr');
@@ -308,12 +304,10 @@
 
         function logout() {
             localStorage.clear();
-            // 使用绝对路径，确保在任何子路径下都能正确跳转
             const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
             window.location.href = baseUrl + 'login.html';
         }
 
-        // 页面启动
         (async () => {
             const ok = await initCloud();
             if (!ok) return;

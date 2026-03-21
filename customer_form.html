@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>商家信息填写</title>
+    <link rel="preconnect" href="https://static.cloudbase.net">
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
@@ -100,87 +101,90 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';
-        let db = null;
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const salesId = urlParams.get('salesId');
-        if (!salesId) {
-            alert('无效链接，请联系销售员');
-            throw new Error('缺少销售员ID');
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
-        }
-
-        async function initCloud() {
-            if (typeof cloudbase === 'undefined') {
-                alert('SDK 加载失败，请刷新页面重试');
-                return false;
+        (function() {
+            const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
+            let db = null;
+            let isCloudReady = false;
+            const urlParams = new URLSearchParams(window.location.search);
+            const salesId = urlParams.get('salesId');
+            if (!salesId) {
+                alert('无效链接，请联系销售员');
+                throw new Error('缺少销售员ID');
             }
-            try {
-                const app = cloudbase.init({ env: ENV_ID });
-                db = app.database();
-                await db.collection('sales').limit(1).get();
-                return true;
-            } catch (err) {
-                console.error(err);
-                alert('初始化失败，请稍后再试');
-                return false;
-            }
-        }
 
-        const categorySelect = document.getElementById('category');
-        const customGroup = document.getElementById('customCategoryGroup');
-        const customInput = document.getElementById('customCategory');
-        categorySelect.addEventListener('change', () => {
-            if (categorySelect.value === '其他') {
-                customGroup.style.display = 'block';
-                customInput.required = true;
-            } else {
-                customGroup.style.display = 'none';
-                customInput.required = false;
-                customInput.value = '';
+            function showToast(msg) {
+                const toast = document.getElementById('toast');
+                toast.textContent = msg;
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 3000);
             }
-        });
 
-        document.getElementById('customerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const shopName = document.getElementById('shopName').value.trim();
-            const address = document.getElementById('address').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            let category = categorySelect.value;
-            if (category === '其他') {
-                const custom = customInput.value.trim();
-                if (!custom) { showToast('请填写具体类目'); return; }
-                category = custom;
+            async function initCloud() {
+                try {
+                    const app = cloudbase.init({ env: CLOUD_ENV });
+                    await app.auth().signInAnonymously();
+                    db = app.database();
+                    isCloudReady = true;
+                    console.log('✅ 云数据库初始化成功');
+                } catch (err) {
+                    console.error('❌ 云数据库初始化失败', err);
+                    isCloudReady = false;
+                    alert('初始化失败：' + (err.message || '请检查环境ID或匿名登录是否开启'));
+                }
             }
-            const remark = document.getElementById('remark').value.trim();
-            if (!shopName || !address || !phone) {
-                showToast('请填写所有带 * 的字段');
-                return;
-            }
-            try {
-                await db.collection('customers').add({
-                    shopName, address, phone, category, remark,
-                    salesId: salesId,
-                    createdAt: new Date().toISOString()
-                });
-                showToast('✅ 提交成功！感谢您的信任');
-                document.getElementById('customerForm').reset();
-                categorySelect.value = '';
-                customGroup.style.display = 'none';
-            } catch (err) {
-                console.error(err);
-                showToast('提交失败，请重试');
-            }
-        });
 
-        initCloud();
+            const categorySelect = document.getElementById('category');
+            const customGroup = document.getElementById('customCategoryGroup');
+            const customInput = document.getElementById('customCategory');
+            categorySelect.addEventListener('change', () => {
+                if (categorySelect.value === '其他') {
+                    customGroup.style.display = 'block';
+                    customInput.required = true;
+                } else {
+                    customGroup.style.display = 'none';
+                    customInput.required = false;
+                    customInput.value = '';
+                }
+            });
+
+            document.getElementById('customerForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!isCloudReady) {
+                    showToast('系统未就绪，请稍后再试');
+                    return;
+                }
+                const shopName = document.getElementById('shopName').value.trim();
+                const address = document.getElementById('address').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                let category = categorySelect.value;
+                if (category === '其他') {
+                    const custom = customInput.value.trim();
+                    if (!custom) { showToast('请填写具体类目'); return; }
+                    category = custom;
+                }
+                const remark = document.getElementById('remark').value.trim();
+                if (!shopName || !address || !phone) {
+                    showToast('请填写所有带 * 的字段');
+                    return;
+                }
+                try {
+                    await db.collection('customers').add({
+                        shopName, address, phone, category, remark,
+                        salesId: salesId,
+                        createdAt: new Date().toISOString()
+                    });
+                    showToast('✅ 提交成功！感谢您的信任');
+                    document.getElementById('customerForm').reset();
+                    categorySelect.value = '';
+                    customGroup.style.display = 'none';
+                } catch (err) {
+                    console.error(err);
+                    showToast('提交失败，请重试');
+                }
+            });
+
+            initCloud();
+        })();
     </script>
 </body>
 </html>

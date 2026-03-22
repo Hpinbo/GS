@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://static.cloudbase.net">
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
-        * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+        * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
         body { background: #f5f7fa; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
         .card { background: white; border-radius: 28px; padding: 24px; margin-bottom: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
@@ -146,6 +146,45 @@
                 }
             }
 
+            // 使用 DOM 方法渲染销售员表格
+            function renderSalesTable(sales, countMap) {
+                var tbody = document.getElementById('salesList');
+                tbody.innerHTML = '';
+                for (var i = 0; i < sales.length; i++) {
+                    var s = sales[i];
+                    var levelText = s.level === 1 ? '一级' : (s.level === 2 ? '二级' : '三级');
+                    var row = tbody.insertRow();
+                    row.insertCell(0).innerText = s.name || '';
+                    row.insertCell(1).innerText = s.phone || '';
+                    row.insertCell(2).innerText = levelText;
+                    row.insertCell(3).innerText = s.city || '';
+                    row.insertCell(4).innerText = s.district || '';
+                    row.insertCell(5).innerText = s.street || '';
+                    row.insertCell(6).innerText = (countMap.get(s.salesId) || 0);
+                    var btnCell = row.insertCell(7);
+                    var btn = document.createElement('button');
+                    btn.innerText = '重置密码';
+                    btn.onclick = (function(id) { return function() { window.resetPassword(id); }; })(s.salesId);
+                    btnCell.appendChild(btn);
+                }
+            }
+
+            // 使用 DOM 方法渲染商家表格
+            function renderCustomersTable(customers, salesMap) {
+                var tbody = document.getElementById('allCustomersList');
+                tbody.innerHTML = '';
+                for (var i = 0; i < customers.length; i++) {
+                    var c = customers[i];
+                    var row = tbody.insertRow();
+                    row.insertCell(0).innerText = c.shopName || '';
+                    row.insertCell(1).innerText = c.address || '';
+                    row.insertCell(2).innerText = c.phone || '';
+                    row.insertCell(3).innerText = c.category || '';
+                    row.insertCell(4).innerText = salesMap.get(c.salesId) || c.salesId;
+                    row.insertCell(5).innerText = new Date(c.createdAt).toLocaleString();
+                }
+            }
+
             async function loadData() {
                 if (!db) return;
                 try {
@@ -157,24 +196,7 @@
                     var countMap = new Map();
                     customers.forEach(function(c) { countMap.set(c.salesId, (countMap.get(c.salesId) || 0) + 1); });
 
-                    var salesRows = [];
-                    for (var i = 0; i < sales.length; i++) {
-                        var s = sales[i];
-                        var levelText = s.level === 1 ? '一级' : (s.level === 2 ? '二级' : '三级');
-                        var cityText = s.city || '';
-                        var districtText = s.district || '';
-                        var streetText = s.street || '';
-                        salesRows.push('……
-                        salesRows.push('……
-                        salesRows.push('……
-                        salesRows.push('……
-                        salesRows.push('……
-                        salesRows.push('……
-                        salesRows.push('……
-                        salesRows.push('……
-                        salesRows.push('……
-                    }
-                    document.getElementById('salesList').innerHTML = salesRows.join('');
+                    renderSalesTable(sales, countMap);
 
                     var levelCount = {1:0,2:0,3:0};
                     for (var i = 0; i < sales.length; i++) levelCount[sales[i].level]++;
@@ -188,19 +210,7 @@
 
                     var salesMap = new Map();
                     for (var i = 0; i < sales.length; i++) salesMap.set(sales[i].salesId, sales[i].name);
-                    var customerRows = [];
-                    for (var i = 0; i < customers.length; i++) {
-                        var c = customers[i];
-                        customerRows.push('……
-                        customerRows.push('……
-                        customerRows.push('……
-                        customerRows.push('……
-                        customerRows.push('……
-                        customerRows.push('……
-                        customerRows.push('……
-                    }
-                    if (customerRows.length === 0) customerRows.push('……
-                    document.getElementById('allCustomersList').innerHTML = customerRows.join('');
+                    renderCustomersTable(customers, salesMap);
                 } catch (err) {
                     console.error(err);
                     showToast('加载数据失败');
@@ -278,16 +288,6 @@
             function logout() {
                 localStorage.clear();
                 window.location.href = 'index.html';
-            }
-
-            function escapeHtml(str) {
-                if (!str) return '';
-                return str.replace(/[&<>]/g, function(m) {
-                    if (m === '&') return '&amp;';
-                    if (m === '<') return '&lt;';
-                    if (m === '>') return '&gt;';
-                    return m;
-                });
             }
 
             window.addSalesman = addSalesman;

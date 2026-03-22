@@ -15,7 +15,7 @@
         }
         body {
             background: #f5f7fa;
-            padding: 20px;
+            padding: 16px;
         }
         .container {
             max-width: 1200px;
@@ -29,7 +29,7 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.05);
         }
         h2 {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             margin-bottom: 16px;
             color: #1e2a3a;
         }
@@ -41,24 +41,28 @@
             font-weight: 500;
             margin-bottom: 6px;
             color: #2c3e50;
-            font-size: 0.9rem;
         }
         input, select, textarea {
             width: 100%;
-            padding: 10px 14px;
+            padding: 12px 16px;
             border: 1px solid #dce3ec;
             border-radius: 24px;
-            font-size: 0.95rem;
+            font-size: 1rem;
+            background: #fff;
         }
         button {
             background: #2c3e50;
             color: white;
             border: none;
             border-radius: 40px;
-            padding: 10px 20px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
-            font-size: 0.9rem;
-            margin-right: 10px;
+            transition: 0.2s;
+        }
+        button:active {
+            transform: scale(0.98);
         }
         .btn-primary {
             background: #4f9eff;
@@ -73,7 +77,7 @@
             font-size: 0.9rem;
         }
         th, td {
-            padding: 12px 10px;
+            padding: 12px 8px;
             text-align: left;
             border-bottom: 1px solid #ecf0f1;
         }
@@ -82,7 +86,7 @@
             font-weight: 600;
         }
         .qr-code {
-            margin-top: 16px;
+            margin-top: 20px;
             text-align: center;
             padding: 16px;
             background: #f8f9fc;
@@ -96,60 +100,67 @@
         }
         .link-text {
             word-break: break-all;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: #4f9eff;
             margin-top: 8px;
         }
         .toast {
             position: fixed;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0,0,0,0.8);
             color: white;
-            padding: 8px 16px;
+            padding: 12px 24px;
             border-radius: 40px;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             display: none;
             z-index: 2000;
+            white-space: nowrap;
         }
         .header-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 16px;
         }
         .header-bar h2 {
             margin-bottom: 0;
         }
+        /* 手机适配 */
         @media (max-width: 768px) {
             body {
                 padding: 12px;
             }
             .card {
-                padding: 16px;
+                padding: 18px;
             }
-            .form-group {
-                margin-bottom: 12px;
+            h2 {
+                font-size: 1.3rem;
             }
             button {
-                width: 100%;
-                margin-top: 8px;
-                margin-right: 0;
+                padding: 10px 16px;
+                font-size: 0.9rem;
             }
+            th, td {
+                padding: 8px 6px;
+                font-size: 0.8rem;
+            }
+            .toast {
+                white-space: normal;
+                max-width: 90%;
+                text-align: center;
+            }
+        }
+        @media (max-width: 480px) {
             .header-bar {
                 flex-direction: column;
                 align-items: flex-start;
             }
             .header-bar button {
-                width: auto;
-                margin-top: 0;
-            }
-            th, td {
-                padding: 8px 6px;
-                font-size: 0.8rem;
+                width: 100%;
             }
         }
     </style>
@@ -202,7 +213,7 @@
 
         <div class="card">
             <h2>📱 商家自助填表二维码</h2>
-            <p style="margin-bottom:12px;">商家扫码后可直接填写信息，自动归入您的名下。</p>
+            <p>商家扫码后可直接填写信息，自动归入您的名下。</p>
             <button onclick="window.generateQR()">生成我的专属二维码</button>
             <div id="qrCodeResult" class="qr-code">
                 <div id="qrCodeImg"></div>
@@ -213,21 +224,31 @@
         <div class="card" id="addSubordinatePanel" style="display:none;">
             <h2>👥 发展下级销售员</h2>
             <form id="subordinateForm">
-                <div class="form-group"><input type="text" id="subName" placeholder="姓名" required></div>
-                <div class="form-group"><input type="tel" id="subPhone" placeholder="手机号" required></div>
-                <div class="form-group"><input type="password" id="subPassword" placeholder="密码" value="123456" required></div>
-                <div class="form-group"><select id="subLevel" required><option value="">请选择</option></select></div>
+                <div class="form-group">
+                    <input type="text" id="subName" placeholder="姓名" required>
+                </div>
+                <div class="form-group">
+                    <input type="tel" id="subPhone" placeholder="手机号（登录账号）" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="subPassword" placeholder="密码" value="123456" required>
+                </div>
+                <div class="form-group">
+                    <select id="subLevel" required>
+                        <option value="">请选择</option>
+                    </select>
+                </div>
                 <button type="submit">添加下级</button>
             </form>
         </div>
 
         <div class="card">
             <h2>📊 业绩统计</h2>
-            <div id="statsInfo" style="margin-bottom: 12px; font-weight: bold;"></div>
+            <div id="statsInfo" style="margin-bottom: 16px; font-weight: bold;"></div>
             <div class="table-wrapper">
                 <table id="customerTable">
                     <thead>
-                        <th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>录入时间</th>
+                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th>……
                     </thead>
                     <tbody id="customerList"></tbody>
                 </table>
@@ -247,7 +268,9 @@
                 var toast = document.getElementById('toast');
                 toast.textContent = msg;
                 toast.style.display = 'block';
-                setTimeout(function() { toast.style.display = 'none'; }, 2000);
+                setTimeout(function() {
+                    toast.style.display = 'none';
+                }, 2000);
             }
 
             async function initCloud() {
@@ -256,22 +279,31 @@
                     await new Promise(function(r) { setTimeout(r, 200); });
                     wait++;
                 }
-                if (typeof cloudbase === 'undefined') { alert('SDK 加载失败'); return false; }
+                if (typeof cloudbase === 'undefined') {
+                    alert('SDK 加载失败，请刷新页面重试');
+                    return false;
+                }
                 try {
                     var app = cloudbase.init({ env: CLOUD_ENV, region: 'ap-shanghai' });
-                    await app.auth().signInAnonymously();
                     db = app.database();
                     await db.collection('sales').limit(1).get();
                     isCloudReady = true;
                     return true;
-                } catch (err) { alert('初始化失败：' + err.message); return false; }
+                } catch (err) {
+                    console.error(err);
+                    alert('初始化失败：' + (err.message || '请检查环境ID或安全域名'));
+                    return false;
+                }
             }
 
             function checkLogin() {
                 var id = localStorage.getItem('salesId');
                 var name = localStorage.getItem('salesName');
                 var level = localStorage.getItem('salesLevel');
-                if (!id) { window.location.href = 'index.html'; return false; }
+                if (!id) {
+                    window.location.href = 'index.html';
+                    return false;
+                }
                 currentSales = { id: id, name: name, level: parseInt(level) };
                 document.getElementById('salesName').innerText = currentSales.name;
                 var levelNames = {1:'一',2:'二',3:'三'};
@@ -299,9 +331,10 @@
                 var subordinates = [];
                 function collect(parentId) {
                     for (var i = 0; i < allSales.length; i++) {
-                        if (allSales[i].parentId === parentId) {
-                            subordinates.push(allSales[i].salesId);
-                            collect(allSales[i].salesId);
+                        var s = allSales[i];
+                        if (s.parentId === parentId) {
+                            subordinates.push(s.salesId);
+                            collect(s.salesId);
                         }
                     }
                 }
@@ -317,31 +350,50 @@
                     if (currentSales.level === 1) {
                         var subordinates = await getSubordinateIds();
                         var allCustomers = await db.collection('customers').get();
-                        customers = allCustomers.data.filter(function(c) { return subordinates.indexOf(c.salesId) !== -1; });
+                        customers = allCustomers.data.filter(function(c) {
+                            return subordinates.indexOf(c.salesId) !== -1;
+                        });
                     } else if (currentSales.level === 2) {
                         var allSales = await db.collection('sales').get();
                         var subordinates = [];
                         for (var i = 0; i < allSales.data.length; i++) {
-                            if (allSales.data[i].parentId === currentSales.id) subordinates.push(allSales.data[i].salesId);
+                            if (allSales.data[i].parentId === currentSales.id) {
+                                subordinates.push(allSales.data[i].salesId);
+                            }
                         }
                         subordinates.push(currentSales.id);
                         var allCustomers = await db.collection('customers').get();
-                        customers = allCustomers.data.filter(function(c) { return subordinates.indexOf(c.salesId) !== -1; });
+                        customers = allCustomers.data.filter(function(c) {
+                            return subordinates.indexOf(c.salesId) !== -1;
+                        });
                     } else {
                         var res = await db.collection('customers').where({ salesId: currentSales.id }).get();
                         customers = res.data;
                     }
                     renderCustomers(customers);
                     document.getElementById('statsInfo').innerHTML = '总录入商家数：' + customers.length;
-                } catch (err) { showToast('加载失败'); }
+                } catch (err) {
+                    console.error(err);
+                    showToast('加载商家列表失败');
+                }
             }
 
-            function renderCustomers(customers) {
+            async function renderCustomers(customers) {
+                var salesMap = new Map();
+                var allSales = await db.collection('sales').get();
+                for (var i = 0; i < allSales.data.length; i++) {
+                    salesMap.set(allSales.data[i].salesId, allSales.data[i].name);
+                }
                 var tbody = document.getElementById('customerList');
-                if (customers.length === 0) { tbody.innerHTML = '……
+                if (customers.length === 0) {
+                    tbody.innerHTML = '……
+                    return;
+                }
                 var html = '';
                 for (var i = 0; i < customers.length; i++) {
                     var c = customers[i];
+                    html += '……
+                    html += '……
                     html += '……
                     html += '……
                     html += '……
@@ -366,18 +418,29 @@
                     category = custom;
                 }
                 var remark = document.getElementById('remark').value.trim();
-                if (!shopName || !address || !phone) { showToast('请填写所有带 * 的字段'); return; }
+                if (!shopName || !address || !phone) {
+                    showToast('请填写所有带 * 的字段');
+                    return;
+                }
                 try {
                     await db.collection('customers').add({
-                        shopName: shopName, address: address, phone: phone, category: category, remark: remark,
-                        salesId: currentSales.id, createdAt: new Date().toISOString()
+                        shopName: shopName,
+                        address: address,
+                        phone: phone,
+                        category: category,
+                        remark: remark,
+                        salesId: currentSales.id,
+                        createdAt: new Date().toISOString()
                     });
-                    showToast('商家信息已保存');
+                    showToast('✅ 商家信息已保存');
                     document.getElementById('customerForm').reset();
                     document.getElementById('category').value = '';
                     document.getElementById('customCategoryGroup').style.display = 'none';
                     await loadCustomers();
-                } catch (err) { showToast('提交失败'); }
+                } catch (err) {
+                    console.error(err);
+                    showToast('提交失败，请重试');
+                }
             });
 
             function generateQR() {
@@ -399,18 +462,32 @@
                 var phone = document.getElementById('subPhone').value.trim();
                 var password = document.getElementById('subPassword').value.trim();
                 var level = parseInt(document.getElementById('subLevel').value);
-                if (!name || !phone || !password || !level) { showToast('请填写完整信息'); return; }
+                if (!name || !phone || !password || !level) {
+                    showToast('请填写完整信息');
+                    return;
+                }
                 var exist = await db.collection('sales').where({ phone: phone }).get();
-                if (exist.data.length > 0) { showToast('该手机号已注册'); return; }
+                if (exist.data.length > 0) {
+                    showToast('该手机号已注册');
+                    return;
+                }
                 var salesId = Date.now().toString();
                 try {
                     await db.collection('sales').add({
-                        salesId: salesId, name: name, phone: phone, password: password, level: level,
-                        parentId: currentSales.id, createdAt: new Date().toISOString()
+                        salesId: salesId,
+                        name: name,
+                        phone: phone,
+                        password: password,
+                        level: level,
+                        parentId: currentSales.id,
+                        createdAt: new Date().toISOString()
                     });
-                    showToast('下级销售员添加成功');
+                    showToast('✅ 下级销售员添加成功');
                     document.getElementById('subordinateForm').reset();
-                } catch (err) { showToast('添加失败'); }
+                } catch (err) {
+                    console.error(err);
+                    showToast('添加失败，请重试');
+                }
             });
 
             var categorySelect = document.getElementById('category');

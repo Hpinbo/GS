@@ -7,19 +7,88 @@
     <link rel="preconnect" href="https://static.cloudbase.net">
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
-        * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
-        body { background: #f5f7fa; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-card { background: white; border-radius: 32px; padding: 32px 24px; width: 100%; max-width: 360px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
-        h2 { font-size: 1.8rem; margin-bottom: 8px; text-align: center; color: #1e2a3a; }
-        .sub { text-align: center; color: #5a6e7c; margin-bottom: 28px; font-size: 0.9rem; }
-        input { width: 100%; padding: 14px 16px; border: 1px solid #dce3ec; border-radius: 40px; margin-bottom: 16px; font-size: 1rem; background: #fff; }
-        input:focus { outline: none; border-color: #4f9eff; box-shadow: 0 0 0 3px rgba(79,158,255,0.1); }
-        button { width: 100%; padding: 14px; background: #2c3e50; color: white; border: none; border-radius: 40px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 32px;
+            padding: 32px 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+        }
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            text-align: center;
+            color: #1e2a3a;
+        }
+        .sub {
+            text-align: center;
+            color: #5a6e7c;
+            margin-bottom: 28px;
+            font-size: 0.9rem;
+        }
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #dce3ec;
+            border-radius: 40px;
+            margin-bottom: 16px;
+            font-size: 1rem;
+            background: #fff;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4f9eff;
+            box-shadow: 0 0 0 3px rgba(79,158,255,0.1);
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
         button:active { transform: scale(0.98); }
-        button:disabled { background: #95a5a6; cursor: not-allowed; transform: none; }
-        .error { color: #e74c3c; text-align: center; margin-top: 16px; font-size: 0.85rem; }
-        .info { color: #f39c12; text-align: center; margin-top: 12px; font-size: 0.85rem; }
-        @media (max-width: 480px) { .login-card { padding: 24px 20px; } h2 { font-size: 1.5rem; } input, button { padding: 12px; } }
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 16px;
+            font-size: 0.85rem;
+        }
+        .info {
+            color: #f39c12;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.85rem;
+        }
+        @media (max-width: 600px) {
+            .login-card { padding: 24px 20px; max-width: 90%; }
+            h2 { font-size: 1.5rem; }
+            input, button { padding: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -35,19 +104,19 @@
 
     <script>
         (function() {
-            const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
-            let db = null;
-            let initSuccess = false;
+            var CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
+            var db = null;
+            var initSuccess = false;
 
-            const phoneInput = document.getElementById('phone');
-            const pwdInput = document.getElementById('password');
-            const loginBtn = document.getElementById('loginBtn');
-            const errorMsg = document.getElementById('errorMsg');
-            const infoMsg = document.getElementById('infoMsg');
+            var phoneInput = document.getElementById('phone');
+            var pwdInput = document.getElementById('password');
+            var loginBtn = document.getElementById('loginBtn');
+            var errorMsg = document.getElementById('errorMsg');
+            var infoMsg = document.getElementById('infoMsg');
 
             function showInfo(msg) {
                 infoMsg.innerText = msg;
-                setTimeout(() => { if (infoMsg.innerText === msg) infoMsg.innerText = ''; }, 3000);
+                setTimeout(function() { if (infoMsg.innerText === msg) infoMsg.innerText = ''; }, 3000);
             }
 
             function showError(msg) {
@@ -60,10 +129,9 @@
             }
 
             async function initCloud() {
-                // 等待 SDK 加载
-                let waitCount = 0;
+                var waitCount = 0;
                 while (typeof cloudbase === 'undefined' && waitCount < 30) {
-                    await new Promise(r => setTimeout(r, 200));
+                    await new Promise(function(r) { setTimeout(r, 200); });
                     waitCount++;
                 }
                 if (typeof cloudbase === 'undefined') {
@@ -72,7 +140,7 @@
                     return;
                 }
                 try {
-                    const app = cloudbase.init({ env: CLOUD_ENV, region: 'ap-shanghai' });
+                    var app = cloudbase.init({ env: CLOUD_ENV, region: 'ap-shanghai' });
                     await app.auth().signInAnonymously();  // 关键：匿名登录
                     db = app.database();
                     await db.collection('sales').limit(1).get();
@@ -81,7 +149,7 @@
                     showInfo('✅ 系统已就绪');
                 } catch (err) {
                     console.error(err);
-                    let msg = err.message || '';
+                    var msg = err.message || '';
                     if (msg.includes('scope')) {
                         msg = '请检查安全域名配置：hpinbo.github.io';
                     } else {
@@ -97,8 +165,8 @@
                     showError('系统未就绪，请稍后再试');
                     return;
                 }
-                const phone = phoneInput.value.trim();
-                const pwd = pwdInput.value.trim();
+                var phone = phoneInput.value.trim();
+                var pwd = pwdInput.value.trim();
                 if (!phone || !pwd) {
                     showError('请输入手机号和密码');
                     return;
@@ -106,9 +174,9 @@
                 setButtonEnabled(false);
                 loginBtn.innerText = '登录中...';
                 try {
-                    const res = await db.collection('sales').where({ phone: phone, password: pwd }).get();
+                    var res = await db.collection('sales').where({ phone: phone, password: pwd }).get();
                     if (res.data.length > 0) {
-                        const sales = res.data[0];
+                        var sales = res.data[0];
                         localStorage.setItem('salesId', sales.salesId);
                         localStorage.setItem('salesName', sales.name);
                         localStorage.setItem('salesLevel', sales.level);

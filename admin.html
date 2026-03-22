@@ -29,7 +29,6 @@
         .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
         .header-bar h2 { margin-bottom: 0; }
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
         @media (max-width: 768px) {
             body { padding: 12px; }
             .card { padding: 18px; }
@@ -162,6 +161,9 @@
                     for (var i = 0; i < sales.length; i++) {
                         var s = sales[i];
                         var levelText = s.level === 1 ? '一级' : (s.level === 2 ? '二级' : '三级');
+                        var cityText = s.city || '';
+                        var districtText = s.district || '';
+                        var streetText = s.street || '';
                         salesRows.push('……
                         salesRows.push('……
                         salesRows.push('……

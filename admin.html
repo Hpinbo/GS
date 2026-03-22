@@ -30,7 +30,6 @@
         .header-bar h2 { margin-bottom: 0; }
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-        /* 手机适配 */
         @media (max-width: 768px) {
             body { padding: 12px; }
             .card { padding: 18px; }
@@ -73,6 +72,9 @@
                         <option value="3">三级销售员（街道）</option>
                     </select>
                 </div>
+                <div class="form-group"><input type="text" id="newCity" placeholder="市"></div>
+                <div class="form-group"><input type="text" id="newDistrict" placeholder="区/县"></div>
+                <div class="form-group"><input type="text" id="newStreet" placeholder="街道/镇"></div>
                 <button onclick="window.addSalesman()">添加销售员</button>
             </div>
         </div>
@@ -87,7 +89,7 @@
             <div class="table-wrapper">
                 <table id="salesTable">
                     <thead>
-                        <tr><th>姓名</th><th>手机号</th><th>级别</th><th>录入商家数</th><th>操作</th>……
+                        <tr><th>姓名</th><th>手机号</th><th>级别</th><th>市</th><th>区/县</th><th>街道</th><th>录入商家数</th><th>操作</th>……
                     </thead>
                     <tbody id="salesList"></tbody>
                 ……
@@ -167,6 +169,8 @@
                         salesRows.push('……
                         salesRows.push('……
                         salesRows.push('……
+                        salesRows.push('……
+                        salesRows.push('……
                     }
                     document.getElementById('salesList').innerHTML = salesRows.join('');
 
@@ -207,19 +211,33 @@
                 var phone = document.getElementById('newPhone').value.trim();
                 var password = document.getElementById('newPassword').value.trim();
                 var level = parseInt(document.getElementById('newLevel').value);
-                if (!name || !phone || !password) { showToast('请填写完整信息'); return; }
+                var city = document.getElementById('newCity').value.trim();
+                var district = document.getElementById('newDistrict').value.trim();
+                var street = document.getElementById('newStreet').value.trim();
+                if (!name || !phone || !password) { showToast('请填写姓名、手机号和密码'); return; }
                 var exist = await db.collection('sales').where({ phone: phone }).get();
                 if (exist.data.length > 0) { showToast('该手机号已注册'); return; }
                 var salesId = Date.now().toString();
                 try {
                     await db.collection('sales').add({
-                        salesId: salesId, name: name, phone: phone, password: password,
-                        level: level, parentId: null, createdAt: new Date().toISOString()
+                        salesId: salesId,
+                        name: name,
+                        phone: phone,
+                        password: password,
+                        level: level,
+                        parentId: null,
+                        city: city,
+                        district: district,
+                        street: street,
+                        createdAt: new Date().toISOString()
                     });
                     showToast('✅ 销售员添加成功');
                     document.getElementById('newName').value = '';
                     document.getElementById('newPhone').value = '';
                     document.getElementById('newPassword').value = '123456';
+                    document.getElementById('newCity').value = '';
+                    document.getElementById('newDistrict').value = '';
+                    document.getElementById('newStreet').value = '';
                     await loadData();
                 } catch (err) { showToast('添加失败'); }
             }

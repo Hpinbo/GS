@@ -7,140 +7,28 @@
     <link rel="preconnect" href="https://static.cloudbase.net">
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-        }
-        body {
-            background: #f5f7fa;
-            padding: 12px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .card {
-            background: white;
-            border-radius: 24px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        h2 {
-            font-size: 1.3rem;
-            margin-bottom: 16px;
-            color: #1e2a3a;
-        }
-        .form-group {
-            margin-bottom: 14px;
-        }
-        label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 6px;
-            color: #2c3e50;
-            font-size: 0.85rem;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #dce3ec;
-            border-radius: 24px;
-            font-size: 0.95rem;
-            background: #fff;
-        }
-        button {
-            background: #2c3e50;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 12px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            width: 100%;
-        }
-        .btn-primary {
-            background: #4f9eff;
-        }
-        .table-wrapper {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.75rem;
-            min-width: 500px;
-        }
-        th, td {
-            padding: 8px 6px;
-            text-align: left;
-            border-bottom: 1px solid #ecf0f1;
-        }
-        th {
-            background: #f8f9fc;
-            font-weight: 600;
-        }
-        .qr-code {
-            margin-top: 16px;
-            text-align: center;
-            padding: 16px;
-            background: #f8f9fc;
-            border-radius: 20px;
-            display: none;
-        }
-        .qr-code img {
-            width: 150px;
-            height: 150px;
-            margin: 10px auto;
-        }
-        .link-text {
-            word-break: break-all;
-            font-size: 0.7rem;
-            color: #4f9eff;
-            margin-top: 8px;
-        }
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            display: none;
-            z-index: 2000;
-            white-space: nowrap;
-        }
-        .header-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .header-bar h2 {
-            margin-bottom: 0;
-            font-size: 1.2rem;
-        }
-        .header-bar button {
-            width: auto;
-            padding: 6px 14px;
-        }
-        @media (max-width: 600px) {
-            body {
-                padding: 8px;
-            }
-            .card {
-                padding: 16px;
-            }
-        }
+        * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, sans-serif; }
+        body { background: #f5f7fa; padding: 12px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; border-radius: 24px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h2 { font-size: 1.3rem; margin-bottom: 16px; color: #1e2a3a; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-weight: 500; margin-bottom: 6px; color: #2c3e50; font-size: 0.85rem; }
+        input, select, textarea { width: 100%; padding: 12px 14px; border: 1px solid #dce3ec; border-radius: 24px; font-size: 0.95rem; background: #fff; }
+        button { background: #2c3e50; color: white; border: none; border-radius: 40px; padding: 12px; font-size: 0.95rem; font-weight: 500; cursor: pointer; width: 100%; }
+        .btn-primary { background: #4f9eff; }
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; min-width: 500px; }
+        th, td { padding: 8px 6px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th { background: #f8f9fc; font-weight: 600; }
+        .qr-code { margin-top: 16px; text-align: center; padding: 16px; background: #f8f9fc; border-radius: 20px; display: none; }
+        .qr-code img { width: 150px; height: 150px; margin: 10px auto; }
+        .link-text { word-break: break-all; font-size: 0.7rem; color: #4f9eff; margin-top: 8px; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 8px 16px; border-radius: 40px; font-size: 0.8rem; display: none; z-index: 2000; white-space: nowrap; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+        .header-bar h2 { margin-bottom: 0; font-size: 1.2rem; }
+        .header-bar button { width: auto; padding: 6px 14px; }
+        @media (max-width: 600px) { body { padding: 8px; } .card { padding: 16px; } }
     </style>
 </head>
 <body>
@@ -155,18 +43,9 @@
         <div class="card">
             <h2>📝 录入商家信息</h2>
             <form id="customerForm">
-                <div class="form-group">
-                    <label>店名 *</label>
-                    <input type="text" id="shopName" required>
-                </div>
-                <div class="form-group">
-                    <label>地址 *</label>
-                    <input type="text" id="address" required>
-                </div>
-                <div class="form-group">
-                    <label>联系电话 *</label>
-                    <input type="tel" id="phone" required>
-                </div>
+                <div class="form-group"><label>店名 *</label><input type="text" id="shopName" required></div>
+                <div class="form-group"><label>地址 *</label><input type="text" id="address" required></div>
+                <div class="form-group"><label>联系电话 *</label><input type="tel" id="phone" required></div>
                 <div class="form-group">
                     <label>类目 *</label>
                     <select id="category" required>
@@ -177,14 +56,9 @@
                         <option value="休闲娱乐">休闲娱乐</option>
                         <option value="其他">其他</option>
                     </select>
-                    <div id="customCategoryGroup" style="display:none; margin-top:8px;">
-                        <input type="text" id="customCategory" placeholder="请输入具体类目">
-                    </div>
+                    <div id="customCategoryGroup" style="display:none; margin-top:8px;"><input type="text" id="customCategory" placeholder="请输入具体类目"></div>
                 </div>
-                <div class="form-group">
-                    <label>备注</label>
-                    <textarea id="remark" rows="2"></textarea>
-                </div>
+                <div class="form-group"><label>备注</label><textarea id="remark" rows="2"></textarea></div>
                 <button type="submit" class="btn-primary">✓ 提交商家信息</button>
             </form>
         </div>
@@ -213,12 +87,7 @@
         <div class="card">
             <h2>📊 业绩统计</h2>
             <div id="statsInfo" style="margin-bottom: 10px; font-weight: bold;"></div>
-            <div class="table-wrapper">
-                <table id="customerTable">
-                    <thead><tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>录入时间</th></tr></thead>
-                    <tbody id="customerList"></tbody>
-                </table>
-            </div>
+            <div class="table-wrapper"><table id="customerTable"><thead><tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>录入时间</th></tr></thead><tbody id="customerList"></tbody></table></div>
         </div>
     </div>
     <div id="toast" class="toast"></div>
@@ -344,3 +213,90 @@
                 var shopName = document.getElementById('shopName').value.trim();
                 var address = document.getElementById('address').value.trim();
                 var phone = document.getElementById('phone').value.trim();
+                var category = document.getElementById('category').value;
+                var customInput = document.getElementById('customCategory');
+                if (category === '其他') {
+                    var custom = customInput.value.trim();
+                    if (!custom) { showToast('请填写具体类目'); return; }
+                    category = custom;
+                }
+                var remark = document.getElementById('remark').value.trim();
+                if (!shopName || !address || !phone) { showToast('请填写所有带 * 的字段'); return; }
+                try {
+                    await db.collection('customers').add({
+                        shopName: shopName, address: address, phone: phone, category: category, remark: remark,
+                        salesId: currentSales.id, createdAt: new Date().toISOString()
+                    });
+                    showToast('商家信息已保存');
+                    document.getElementById('customerForm').reset();
+                    document.getElementById('category').value = '';
+                    document.getElementById('customCategoryGroup').style.display = 'none';
+                    await loadCustomers();
+                } catch (err) { showToast('提交失败'); }
+            });
+
+            function generateQR() {
+                var baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+                var formUrl = baseUrl + 'customer_form.html?salesId=' + currentSales.id;
+                document.getElementById('formLink').innerHTML = '<a href="' + formUrl + '" target="_blank">' + formUrl + '</a>';
+                var img = document.createElement('img');
+                img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(formUrl);
+                var qrImgDiv = document.getElementById('qrCodeImg');
+                qrImgDiv.innerHTML = '';
+                qrImgDiv.appendChild(img);
+                document.getElementById('qrCodeResult').style.display = 'block';
+            }
+
+            document.getElementById('subordinateForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (!isCloudReady) { showToast('系统未就绪'); return; }
+                var name = document.getElementById('subName').value.trim();
+                var phone = document.getElementById('subPhone').value.trim();
+                var password = document.getElementById('subPassword').value.trim();
+                var level = parseInt(document.getElementById('subLevel').value);
+                if (!name || !phone || !password || !level) { showToast('请填写完整信息'); return; }
+                var exist = await db.collection('sales').where({ phone: phone }).get();
+                if (exist.data.length > 0) { showToast('该手机号已注册'); return; }
+                var salesId = Date.now().toString();
+                try {
+                    await db.collection('sales').add({
+                        salesId: salesId, name: name, phone: phone, password: password, level: level,
+                        parentId: currentSales.id, createdAt: new Date().toISOString()
+                    });
+                    showToast('下级销售员添加成功');
+                    document.getElementById('subordinateForm').reset();
+                } catch (err) { showToast('添加失败'); }
+            });
+
+            var categorySelect = document.getElementById('category');
+            var customGroup = document.getElementById('customCategoryGroup');
+            var customInput = document.getElementById('customCategory');
+            categorySelect.addEventListener('change', function() {
+                if (categorySelect.value === '其他') {
+                    customGroup.style.display = 'block';
+                    customInput.required = true;
+                } else {
+                    customGroup.style.display = 'none';
+                    customInput.required = false;
+                    customInput.value = '';
+                }
+            });
+
+            function logout() {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
+
+            window.logout = logout;
+            window.generateQR = generateQR;
+
+            (async function() {
+                if (!await initCloud()) return;
+                if (!checkLogin()) return;
+                document.getElementById('mainContainer').style.display = 'block';
+                await loadData();
+            })();
+        })();
+    </script>
+</body>
+</html>

@@ -94,27 +94,28 @@
 
     <script>
         (function() {
-            var CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
-            var db = null;
-            var isCloudReady = false;
-            var currentSales = null;
+            const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
+            let db = null;
+            let isCloudReady = false;
+            let currentSales = null;
 
             function showToast(msg) {
-                var toast = document.getElementById('toast');
+                const toast = document.getElementById('toast');
                 toast.textContent = msg;
                 toast.style.display = 'block';
-                setTimeout(function() { toast.style.display = 'none'; }, 2000);
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
             }
 
             async function initCloud() {
-                var wait = 0;
+                let wait = 0;
                 while (typeof cloudbase === 'undefined' && wait < 30) {
-                    await new Promise(function(r) { setTimeout(r, 200); });
+                    await new Promise(r => setTimeout(r, 200));
                     wait++;
                 }
                 if (typeof cloudbase === 'undefined') { alert('SDK 加载失败'); return false; }
                 try {
-                    var app = cloudbase.init({ env: CLOUD_ENV, region: 'ap-shanghai' });
+                    const app = cloudbase.init({ env: CLOUD_ENV, region: 'ap-shanghai' });
+                    await app.auth().signInAnonymously();
                     db = app.database();
                     await db.collection('sales').limit(1).get();
                     isCloudReady = true;
@@ -123,13 +124,13 @@
             }
 
             function checkLogin() {
-                var id = localStorage.getItem('salesId');
-                var name = localStorage.getItem('salesName');
-                var level = localStorage.getItem('salesLevel');
+                const id = localStorage.getItem('salesId');
+                const name = localStorage.getItem('salesName');
+                const level = localStorage.getItem('salesLevel');
                 if (!id) { window.location.href = 'index.html'; return false; }
                 currentSales = { id: id, name: name, level: parseInt(level) };
                 document.getElementById('salesName').innerText = currentSales.name;
-                var levelNames = {1:'一',2:'二',3:'三'};
+                const levelNames = {1:'一',2:'二',3:'三'};
                 document.getElementById('levelName').innerText = levelNames[currentSales.level];
                 return true;
             }
@@ -138,7 +139,7 @@
                 if (!db || !isCloudReady) return;
                 if (currentSales.level === 1 || currentSales.level === 2) {
                     document.getElementById('addSubordinatePanel').style.display = 'block';
-                    var subLevelSelect = document.getElementById('subLevel');
+                    const subLevelSelect = document.getElementById('subLevel');
                     if (currentSales.level === 1) {
                         subLevelSelect.innerHTML = '<option value="">请选择</option><option value="2">二级销售员（区县）</option><option value="3">三级销售员（街道）</option>';
                     } else {
@@ -149,11 +150,11 @@
             }
 
             async function getSubordinateIds() {
-                var allSalesRes = await db.collection('sales').get();
-                var allSales = allSalesRes.data;
-                var subordinates = [];
+                const allSalesRes = await db.collection('sales').get();
+                const allSales = allSalesRes.data;
+                const subordinates = [];
                 function collect(parentId) {
-                    for (var i = 0; i < allSales.length; i++) {
+                    for (let i = 0; i < allSales.length; i++) {
                         if (allSales[i].parentId === parentId) {
                             subordinates.push(allSales[i].salesId);
                             collect(allSales[i].salesId);
@@ -168,22 +169,22 @@
             async function loadCustomers() {
                 if (!db) return;
                 try {
-                    var customers = [];
+                    let customers = [];
                     if (currentSales.level === 1) {
-                        var subordinates = await getSubordinateIds();
-                        var allCustomers = await db.collection('customers').get();
-                        customers = allCustomers.data.filter(function(c) { return subordinates.indexOf(c.salesId) !== -1; });
+                        const subordinates = await getSubordinateIds();
+                        const allCustomers = await db.collection('customers').get();
+                        customers = allCustomers.data.filter(c => subordinates.indexOf(c.salesId) !== -1);
                     } else if (currentSales.level === 2) {
-                        var allSales = await db.collection('sales').get();
-                        var subordinates = [];
-                        for (var i = 0; i < allSales.data.length; i++) {
+                        const allSales = await db.collection('sales').get();
+                        const subordinates = [];
+                        for (let i = 0; i < allSales.data.length; i++) {
                             if (allSales.data[i].parentId === currentSales.id) subordinates.push(allSales.data[i].salesId);
                         }
                         subordinates.push(currentSales.id);
-                        var allCustomers = await db.collection('customers').get();
-                        customers = allCustomers.data.filter(function(c) { return subordinates.indexOf(c.salesId) !== -1; });
+                        const allCustomers = await db.collection('customers').get();
+                        customers = allCustomers.data.filter(c => subordinates.indexOf(c.salesId) !== -1);
                     } else {
-                        var res = await db.collection('customers').where({ salesId: currentSales.id }).get();
+                        const res = await db.collection('customers').where({ salesId: currentSales.id }).get();
                         customers = res.data;
                     }
                     renderCustomers(customers);
@@ -192,17 +193,18 @@
             }
 
             function renderCustomers(customers) {
-                var tbody = document.getElementById('customerList');
-                if (customers.length === 0) { tbody.innerHTML = '……
-                var html = '';
-                for (var i = 0; i < customers.length; i++) {
-                    var c = customers[i];
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
+                const tbody = document.getElementById('customerList');
+                if (customers.length === 0) { tbody.innerHTML = '<tr><td colspan="5">暂无数据</td></tr>'; return; }
+                let html = '';
+                for (let i = 0; i < customers.length; i++) {
+                    const c = customers[i];
+                    html += '<tr>';
+                    html += '<td>' + escapeHtml(c.shopName) + '</td>';
+                    html += '<td>' + escapeHtml(c.address) + '</td>';
+                    html += '<td>' + escapeHtml(c.phone) + '</td>';
+                    html += '<td>' + escapeHtml(c.category) + '</td>';
+                    html += '<td>' + new Date(c.createdAt).toLocaleString() + '</td>';
+                    html += '</tr>';
                 }
                 tbody.innerHTML = html;
             }
@@ -210,21 +212,21 @@
             document.getElementById('customerForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 if (!isCloudReady) { showToast('系统未就绪'); return; }
-                var shopName = document.getElementById('shopName').value.trim();
-                var address = document.getElementById('address').value.trim();
-                var phone = document.getElementById('phone').value.trim();
-                var category = document.getElementById('category').value;
-                var customInput = document.getElementById('customCategory');
+                const shopName = document.getElementById('shopName').value.trim();
+                const address = document.getElementById('address').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                let category = document.getElementById('category').value;
+                const customInput = document.getElementById('customCategory');
                 if (category === '其他') {
-                    var custom = customInput.value.trim();
+                    const custom = customInput.value.trim();
                     if (!custom) { showToast('请填写具体类目'); return; }
                     category = custom;
                 }
-                var remark = document.getElementById('remark').value.trim();
+                const remark = document.getElementById('remark').value.trim();
                 if (!shopName || !address || !phone) { showToast('请填写所有带 * 的字段'); return; }
                 try {
                     await db.collection('customers').add({
-                        shopName: shopName, address: address, phone: phone, category: category, remark: remark,
+                        shopName, address, phone, category, remark,
                         salesId: currentSales.id, createdAt: new Date().toISOString()
                     });
                     showToast('商家信息已保存');
@@ -236,12 +238,12 @@
             });
 
             function generateQR() {
-                var baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
-                var formUrl = baseUrl + 'customer_form.html?salesId=' + currentSales.id;
+                const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+                const formUrl = baseUrl + 'customer_form.html?salesId=' + currentSales.id;
                 document.getElementById('formLink').innerHTML = '<a href="' + formUrl + '" target="_blank">' + formUrl + '</a>';
-                var img = document.createElement('img');
+                const img = document.createElement('img');
                 img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(formUrl);
-                var qrImgDiv = document.getElementById('qrCodeImg');
+                const qrImgDiv = document.getElementById('qrCodeImg');
                 qrImgDiv.innerHTML = '';
                 qrImgDiv.appendChild(img);
                 document.getElementById('qrCodeResult').style.display = 'block';
@@ -250,17 +252,17 @@
             document.getElementById('subordinateForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 if (!isCloudReady) { showToast('系统未就绪'); return; }
-                var name = document.getElementById('subName').value.trim();
-                var phone = document.getElementById('subPhone').value.trim();
-                var password = document.getElementById('subPassword').value.trim();
-                var level = parseInt(document.getElementById('subLevel').value);
+                const name = document.getElementById('subName').value.trim();
+                const phone = document.getElementById('subPhone').value.trim();
+                const password = document.getElementById('subPassword').value.trim();
+                const level = parseInt(document.getElementById('subLevel').value);
                 if (!name || !phone || !password || !level) { showToast('请填写完整信息'); return; }
-                var exist = await db.collection('sales').where({ phone: phone }).get();
+                const exist = await db.collection('sales').where({ phone }).get();
                 if (exist.data.length > 0) { showToast('该手机号已注册'); return; }
-                var salesId = Date.now().toString();
+                const salesId = Date.now().toString();
                 try {
                     await db.collection('sales').add({
-                        salesId: salesId, name: name, phone: phone, password: password, level: level,
+                        salesId, name, phone, password, level,
                         parentId: currentSales.id, createdAt: new Date().toISOString()
                     });
                     showToast('下级销售员添加成功');
@@ -268,9 +270,9 @@
                 } catch (err) { showToast('添加失败'); }
             });
 
-            var categorySelect = document.getElementById('category');
-            var customGroup = document.getElementById('customCategoryGroup');
-            var customInput = document.getElementById('customCategory');
+            const categorySelect = document.getElementById('category');
+            const customGroup = document.getElementById('customCategoryGroup');
+            const customInput = document.getElementById('customCategory');
             categorySelect.addEventListener('change', function() {
                 if (categorySelect.value === '其他') {
                     customGroup.style.display = 'block';
@@ -285,6 +287,16 @@
             function logout() {
                 localStorage.clear();
                 window.location.href = 'index.html';
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
             }
 
             window.logout = logout;

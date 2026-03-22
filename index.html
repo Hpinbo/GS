@@ -70,6 +70,8 @@
                 }
                 try {
                     var app = cloudbase.init({ env: CLOUD_ENV, region: 'ap-shanghai' });
+                    // 关键：必须调用匿名登录
+                    await app.auth().signInAnonymously();
                     db = app.database();
                     await db.collection('sales').limit(1).get();
                     initSuccess = true;

@@ -8,29 +8,47 @@
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
-        body { background: #f5f7fa; padding: 16px; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        body { background: #f5f7fa; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
         .card { background: white; border-radius: 28px; padding: 24px; margin-bottom: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         h2 { font-size: 1.5rem; margin-bottom: 16px; color: #1e2a3a; }
-        .stats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
-        .stat-card { background: #f8f9fc; border-radius: 20px; padding: 12px 16px; flex: 1; min-width: 100px; text-align: center; }
-        .stat-number { font-size: 1.5rem; font-weight: bold; color: #2c3e50; }
-        .stat-label { font-size: 0.75rem; color: #5a6e7c; }
+        .stats { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+        .stat-card { background: #f8f9fc; border-radius: 20px; padding: 16px; flex: 1; min-width: 120px; text-align: center; }
+        .stat-number { font-size: 1.8rem; font-weight: bold; color: #2c3e50; }
+        .stat-label { font-size: 0.8rem; color: #5a6e7c; }
         .form-group { margin-bottom: 12px; }
         .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid #dce3ec; border-radius: 24px; font-size: 0.9rem; }
-        .add-salesman { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
-        .add-salesman .form-group { flex: 1; min-width: 120px; margin-bottom: 0; }
-        .add-salesman button { width: auto; margin-top: 0; padding: 10px 20px; }
+        .add-salesman { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+        .add-salesman .form-group { flex: 1; min-width: 150px; margin-bottom: 0; }
+        .add-salesman button { width: auto; margin-top: 0; padding: 10px 24px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #ecf0f1; }
         th { background: #f8f9fc; font-weight: 600; }
         button { background: #2c3e50; color: white; border: none; border-radius: 40px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem; }
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 40px; font-size: 0.9rem; display: none; z-index: 2000; white-space: nowrap; }
-        .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
         .header-bar h2 { margin-bottom: 0; }
         .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        @media (max-width: 768px) { body { padding: 12px; } .card { padding: 18px; } h2 { font-size: 1.3rem; } button { padding: 10px 16px; font-size: 0.9rem; } th, td { padding: 8px 6px; font-size: 0.8rem; } .toast { white-space: normal; max-width: 90%; text-align: center; } }
-        @media (max-width: 600px) { .add-salesman { flex-direction: column; } .add-salesman .form-group { width: 100%; } .add-salesman button { width: 100%; margin-top: 8px; } }
+
+        /* 手机适配 */
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .card { padding: 18px; }
+            h2 { font-size: 1.3rem; }
+            .stats { gap: 10px; }
+            .stat-card { padding: 10px; min-width: 80px; }
+            .stat-number { font-size: 1.3rem; }
+            .add-salesman { flex-direction: column; align-items: stretch; }
+            .add-salesman .form-group { width: 100%; }
+            .add-salesman button { width: 100%; margin-top: 8px; }
+            button { padding: 10px 16px; font-size: 0.9rem; }
+            th, td { padding: 8px 6px; font-size: 0.8rem; }
+            .toast { white-space: normal; max-width: 90%; text-align: center; }
+        }
+        @media (max-width: 480px) {
+            .header-bar { flex-direction: column; align-items: flex-start; }
+            .header-bar button { width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -142,13 +160,13 @@
                     for (var i = 0; i < sales.length; i++) {
                         var s = sales[i];
                         var levelText = s.level === 1 ? '一级' : (s.level === 2 ? '二级' : '三级');
-                        salesRows.push('<tr>');
-                        salesRows.push('<td>' + escapeHtml(s.name) + '</td>');
-                        salesRows.push('<td>' + escapeHtml(s.phone) + '</td>');
-                        salesRows.push('<td>' + levelText + '</td>');
-                        salesRows.push('<td>' + (countMap.get(s.salesId) || 0) + '</td>');
-                        salesRows.push('<td><button onclick="window.resetPassword(\'' + escapeHtml(s.salesId) + '\')">重置密码</button></td>');
-                        salesRows.push('</tr>');
+                        salesRows.push('……
+                        salesRows.push('……
+                        salesRows.push('……
+                        salesRows.push('……
+                        salesRows.push('……
+                        salesRows.push('……
+                        salesRows.push('……
                     }
                     document.getElementById('salesList').innerHTML = salesRows.join('');
 
@@ -167,16 +185,15 @@
                     var customerRows = [];
                     for (var i = 0; i < customers.length; i++) {
                         var c = customers[i];
-                        customerRows.push('<tr>');
-                        customerRows.push('<td>' + escapeHtml(c.shopName) + '</td>');
-                        customerRows.push('<td>' + escapeHtml(c.address) + '</td>');
-                        customerRows.push('<td>' + escapeHtml(c.phone) + '</td>');
-                        customerRows.push('<td>' + escapeHtml(c.category) + '</td>');
-                        customerRows.push('<td>' + escapeHtml(salesMap.get(c.salesId) || c.salesId) + '</td>');
-                        customerRows.push('<td>' + new Date(c.createdAt).toLocaleString() + '</td>');
-                        customerRows.push('</tr>');
+                        customerRows.push('……
+                        customerRows.push('……
+                        customerRows.push('……
+                        customerRows.push('……
+                        customerRows.push('……
+                        customerRows.push('……
+                        customerRows.push('……
                     }
-                    if (customerRows.length === 0) customerRows.push('<tr><td colspan="6">暂无商家数据</td></tr>');
+                    if (customerRows.length === 0) customerRows.push('……
                     document.getElementById('allCustomersList').innerHTML = customerRows.join('');
                 } catch (err) {
                     console.error(err);
@@ -196,13 +213,8 @@
                 var salesId = Date.now().toString();
                 try {
                     await db.collection('sales').add({
-                        salesId: salesId,
-                        name: name,
-                        phone: phone,
-                        password: password,
-                        level: level,
-                        parentId: null,
-                        createdAt: new Date().toISOString()
+                        salesId: salesId, name: name, phone: phone, password: password,
+                        level: level, parentId: null, createdAt: new Date().toISOString()
                     });
                     showToast('✅ 销售员添加成功');
                     document.getElementById('newName').value = '';

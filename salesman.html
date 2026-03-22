@@ -241,20 +241,21 @@
                 }
                 var tbody = document.getElementById('customerList');
                 if (customers.length === 0) {
-                    tbody.innerHTML = '……
+                    tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
                     return;
                 }
                 var rows = [];
                 for (var i = 0; i < customers.length; i++) {
                     var c = customers[i];
-                    rows.push('……
-                    rows.push('……
-                    rows.push('……
-                    rows.push('……
-                    rows.push('……
-                    rows.push('……
-                    rows.push('……
-                    rows.push('……
+                    rows.push('<tr>');
+                    rows.push('<td>' + escapeHtml(c.shopName) + '</td>');
+                    rows.push('<td>' + escapeHtml(c.address) + '</td>');
+                    rows.push('<td>' + escapeHtml(c.phone) + '</td>');
+                    rows.push('<td>' + escapeHtml(c.category) + '</td>');
+                    rows.push('<td>' + escapeHtml(c.remark || '') + '</td>');
+                    rows.push('<td>' + new Date(c.createdAt).toLocaleString() + '</td>');
+                    rows.push('<td>' + escapeHtml(salesMap.get(c.salesId) || c.salesId) + '</td>');
+                    rows.push('</tr>');
                 }
                 tbody.innerHTML = rows.join('');
             }
@@ -353,6 +354,16 @@
             function logout() {
                 localStorage.clear();
                 window.location.href = 'index.html';
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
             }
 
             window.logout = logout;

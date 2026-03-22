@@ -14,8 +14,8 @@
         .sub { text-align: center; color: #5a6e7c; margin-bottom: 28px; font-size: 0.9rem; }
         input { width: 100%; padding: 14px 16px; border: 1px solid #dce3ec; border-radius: 40px; margin-bottom: 16px; font-size: 1rem; background: #fff; }
         input:focus { outline: none; border-color: #4f9eff; box-shadow: 0 0 0 3px rgba(79,158,255,0.1); }
-        button { width: 100%; padding: 14px; background: #2c3e50; color: white; border: none; border-radius: 40px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.98); background: #1e2a3a; }
+        button { width: 100%; padding: 14px; background: #2c3e50; color: white; border: none; border-radius: 40px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        button:active { transform: scale(0.98); }
         button:disabled { background: #95a5a6; cursor: not-allowed; transform: none; }
         .error { color: #e74c3c; text-align: center; margin-top: 16px; font-size: 0.85rem; }
         .info { color: #f39c12; text-align: center; margin-top: 12px; font-size: 0.85rem; }
@@ -35,19 +35,19 @@
 
     <script>
         (function() {
-            var CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
-            var db = null;
-            var initSuccess = false;
+            const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
+            let db = null;
+            let initSuccess = false;
 
-            var phoneInput = document.getElementById('phone');
-            var pwdInput = document.getElementById('password');
-            var loginBtn = document.getElementById('loginBtn');
-            var errorMsg = document.getElementById('errorMsg');
-            var infoMsg = document.getElementById('infoMsg');
+            const phoneInput = document.getElementById('phone');
+            const pwdInput = document.getElementById('password');
+            const loginBtn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const infoMsg = document.getElementById('infoMsg');
 
             function showInfo(msg) {
                 infoMsg.innerText = msg;
-                setTimeout(function() { if (infoMsg.innerText === msg) infoMsg.innerText = ''; }, 3000);
+                setTimeout(() => { if (infoMsg.innerText === msg) infoMsg.innerText = ''; }, 3000);
             }
 
             function showError(msg) {
@@ -61,9 +61,9 @@
 
             async function initCloud() {
                 // 等待 SDK 加载
-                var waitCount = 0;
+                let waitCount = 0;
                 while (typeof cloudbase === 'undefined' && waitCount < 30) {
-                    await new Promise(function(r) { setTimeout(r, 200); });
+                    await new Promise(r => setTimeout(r, 200));
                     waitCount++;
                 }
                 if (typeof cloudbase === 'undefined') {
@@ -72,7 +72,8 @@
                     return;
                 }
                 try {
-                    var app = cloudbase.init({ env: CLOUD_ENV, region: 'ap-shanghai' });
+                    const app = cloudbase.init({ env: CLOUD_ENV, region: 'ap-shanghai' });
+                    await app.auth().signInAnonymously();  // 关键：匿名登录
                     db = app.database();
                     await db.collection('sales').limit(1).get();
                     initSuccess = true;
@@ -80,7 +81,7 @@
                     showInfo('✅ 系统已就绪');
                 } catch (err) {
                     console.error(err);
-                    var msg = err.message || '';
+                    let msg = err.message || '';
                     if (msg.includes('scope')) {
                         msg = '请检查安全域名配置：hpinbo.github.io';
                     } else {
@@ -96,8 +97,8 @@
                     showError('系统未就绪，请稍后再试');
                     return;
                 }
-                var phone = phoneInput.value.trim();
-                var pwd = pwdInput.value.trim();
+                const phone = phoneInput.value.trim();
+                const pwd = pwdInput.value.trim();
                 if (!phone || !pwd) {
                     showError('请输入手机号和密码');
                     return;
@@ -105,9 +106,9 @@
                 setButtonEnabled(false);
                 loginBtn.innerText = '登录中...';
                 try {
-                    var res = await db.collection('sales').where({ phone: phone, password: pwd }).get();
+                    const res = await db.collection('sales').where({ phone: phone, password: pwd }).get();
                     if (res.data.length > 0) {
-                        var sales = res.data[0];
+                        const sales = res.data[0];
                         localStorage.setItem('salesId', sales.salesId);
                         localStorage.setItem('salesName', sales.name);
                         localStorage.setItem('salesLevel', sales.level);

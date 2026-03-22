@@ -44,7 +44,6 @@
             margin-bottom: 16px;
             font-size: 1rem;
             background: #fff;
-            transition: 0.2s;
         }
         input:focus {
             outline: none;
@@ -61,14 +60,11 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
         }
         button:active { transform: scale(0.98); background: #1e2a3a; }
         button:disabled { background: #95a5a6; cursor: not-allowed; transform: none; }
         .error { color: #e74c3c; text-align: center; margin-top: 16px; font-size: 0.85rem; }
         .info { color: #f39c12; text-align: center; margin-top: 12px; font-size: 0.85rem; }
-
-        /* 手机适配 */
         @media (max-width: 640px) {
             body { padding: 16px; }
             .login-card { padding: 24px 20px; max-width: 100%; }
@@ -133,8 +129,11 @@
                 } catch (err) {
                     console.error(err);
                     var msg = err.message || '';
-                    if (msg.includes('scope')) msg = '请检查安全域名配置：hpinbo.github.io';
-                    else msg = '初始化失败：' + msg;
+                    if (msg.includes('scope')) {
+                        msg = '请检查安全域名配置：hpinbo.github.io';
+                    } else {
+                        msg = '初始化失败：' + msg;
+                    }
                     showError(msg);
                     setButtonEnabled(false);
                 }
@@ -154,8 +153,11 @@
                         localStorage.setItem('salesId', sales.salesId);
                         localStorage.setItem('salesName', sales.name);
                         localStorage.setItem('salesLevel', sales.level);
-                        if (sales.salesId === 'admin') window.location.href = 'admin.html';
-                        else window.location.href = 'salesman.html';
+                        if (sales.salesId === 'admin') {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.href = 'salesman.html';
+                        }
                     } else {
                         showError('账号或密码错误');
                         setButtonEnabled(true);
@@ -167,7 +169,12 @@
                 }
             }
 
-            function onEnter(e) { if (e.key === 'Enter') { e.preventDefault(); login(); } }
+            function onEnter(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    login();
+                }
+            }
             phoneInput.addEventListener('keypress', onEnter);
             pwdInput.addEventListener('keypress', onEnter);
             loginBtn.addEventListener('click', login);

@@ -7,162 +7,29 @@
     <link rel="preconnect" href="https://static.cloudbase.net">
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-        }
-        body {
-            background: #f5f7fa;
-            padding: 16px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-        }
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 16px;
-            color: #1e2a3a;
-        }
-        .form-group {
-            margin-bottom: 16px;
-        }
-        label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 6px;
-            color: #2c3e50;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #dce3ec;
-            border-radius: 24px;
-            font-size: 1rem;
-            background: #fff;
-        }
-        button {
-            background: #2c3e50;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 12px 20px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        button:active {
-            transform: scale(0.98);
-        }
-        .btn-primary {
-            background: #4f9eff;
-        }
-        .table-wrapper {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-        th, td {
-            padding: 12px 8px;
-            text-align: left;
-            border-bottom: 1px solid #ecf0f1;
-        }
-        th {
-            background: #f8f9fc;
-            font-weight: 600;
-        }
-        .qr-code {
-            margin-top: 20px;
-            text-align: center;
-            padding: 16px;
-            background: #f8f9fc;
-            border-radius: 20px;
-            display: none;
-        }
-        .qr-code img {
-            width: 150px;
-            height: 150px;
-            margin: 10px auto;
-        }
-        .link-text {
-            word-break: break-all;
-            font-size: 0.8rem;
-            color: #4f9eff;
-            margin-top: 8px;
-        }
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-size: 0.9rem;
-            display: none;
-            z-index: 2000;
-            white-space: nowrap;
-        }
-        .header-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .header-bar h2 {
-            margin-bottom: 0;
-        }
-        /* 手机适配 */
-        @media (max-width: 768px) {
-            body {
-                padding: 12px;
-            }
-            .card {
-                padding: 18px;
-            }
-            h2 {
-                font-size: 1.3rem;
-            }
-            button {
-                padding: 10px 16px;
-                font-size: 0.9rem;
-            }
-            th, td {
-                padding: 8px 6px;
-                font-size: 0.8rem;
-            }
-            .toast {
-                white-space: normal;
-                max-width: 90%;
-                text-align: center;
-            }
-        }
-        @media (max-width: 480px) {
-            .header-bar {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .header-bar button {
-                width: 100%;
-            }
-        }
+        * { margin:0; padding:0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+        body { background: #f5f7fa; padding: 16px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 28px; padding: 24px; margin-bottom: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        h2 { font-size: 1.5rem; margin-bottom: 16px; color: #1e2a3a; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 500; margin-bottom: 6px; color: #2c3e50; }
+        input, select, textarea { width: 100%; padding: 12px 16px; border: 1px solid #dce3ec; border-radius: 24px; font-size: 1rem; background: #fff; }
+        button { background: #2c3e50; color: white; border: none; border-radius: 40px; padding: 12px 20px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+        .btn-primary { background: #4f9eff; }
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th { background: #f8f9fc; font-weight: 600; }
+        .qr-code { margin-top: 20px; text-align: center; padding: 16px; background: #f8f9fc; border-radius: 20px; display: none; }
+        .qr-code img { width: 150px; height: 150px; margin: 10px auto; }
+        .link-text { word-break: break-all; font-size: 0.8rem; color: #4f9eff; margin-top: 8px; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 40px; font-size: 0.9rem; display: none; z-index: 2000; white-space: nowrap; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+        .header-bar h2 { margin-bottom: 0; }
+        @media (max-width: 768px) { body { padding: 12px; } .card { padding: 18px; } h2 { font-size: 1.3rem; } button { padding: 10px 16px; font-size: 0.9rem; } th, td { padding: 8px 6px; font-size: 0.8rem; } .toast { white-space: normal; max-width: 90%; text-align: center; } }
+        @media (max-width: 480px) { .header-bar { flex-direction: column; align-items: flex-start; } .header-bar button { width: 100%; } }
     </style>
 </head>
 <body>
@@ -177,18 +44,9 @@
         <div class="card">
             <h2>📝 录入商家信息</h2>
             <form id="customerForm">
-                <div class="form-group">
-                    <label>店名 *</label>
-                    <input type="text" id="shopName" required>
-                </div>
-                <div class="form-group">
-                    <label>地址 *</label>
-                    <input type="text" id="address" required>
-                </div>
-                <div class="form-group">
-                    <label>联系电话 *</label>
-                    <input type="tel" id="phone" required>
-                </div>
+                <div class="form-group"><label>店名 *</label><input type="text" id="shopName" required></div>
+                <div class="form-group"><label>地址 *</label><input type="text" id="address" required></div>
+                <div class="form-group"><label>联系电话 *</label><input type="tel" id="phone" required></div>
                 <div class="form-group">
                     <label>类目 *</label>
                     <select id="category" required>
@@ -199,14 +57,9 @@
                         <option value="休闲娱乐">休闲娱乐</option>
                         <option value="其他">其他</option>
                     </select>
-                    <div id="customCategoryGroup" style="display:none; margin-top:8px;">
-                        <input type="text" id="customCategory" placeholder="请输入具体类目">
-                    </div>
+                    <div id="customCategoryGroup" style="display:none; margin-top:8px;"><input type="text" id="customCategory" placeholder="请输入具体类目"></div>
                 </div>
-                <div class="form-group">
-                    <label>备注</label>
-                    <textarea id="remark" rows="2"></textarea>
-                </div>
+                <div class="form-group"><label>备注</label><textarea id="remark" rows="2"></textarea></div>
                 <button type="submit" class="btn-primary">✓ 提交商家信息</button>
             </form>
         </div>
@@ -224,20 +77,10 @@
         <div class="card" id="addSubordinatePanel" style="display:none;">
             <h2>👥 发展下级销售员</h2>
             <form id="subordinateForm">
-                <div class="form-group">
-                    <input type="text" id="subName" placeholder="姓名" required>
-                </div>
-                <div class="form-group">
-                    <input type="tel" id="subPhone" placeholder="手机号（登录账号）" required>
-                </div>
-                <div class="form-group">
-                    <input type="password" id="subPassword" placeholder="密码" value="123456" required>
-                </div>
-                <div class="form-group">
-                    <select id="subLevel" required>
-                        <option value="">请选择</option>
-                    </select>
-                </div>
+                <div class="form-group"><input type="text" id="subName" placeholder="姓名" required></div>
+                <div class="form-group"><input type="tel" id="subPhone" placeholder="手机号（登录账号）" required></div>
+                <div class="form-group"><input type="password" id="subPassword" placeholder="密码" value="123456" required></div>
+                <div class="form-group"><select id="subLevel" required><option value="">请选择</option></select></div>
                 <button type="submit">添加下级</button>
             </form>
         </div>
@@ -245,14 +88,7 @@
         <div class="card">
             <h2>📊 业绩统计</h2>
             <div id="statsInfo" style="margin-bottom: 16px; font-weight: bold;"></div>
-            <div class="table-wrapper">
-                <table id="customerTable">
-                    <thead>
-                        <tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th>……
-                    </thead>
-                    <tbody id="customerList"></tbody>
-                </table>
-            </div>
+            <div class="table-wrapper"><table id="customerTable"><thead><tr><th>店名</th><th>地址</th><th>电话</th><th>类目</th><th>备注</th><th>录入时间</th><th>录入销售员</th></tr></thead><tbody id="customerList"></tbody></table></div>
         </div>
     </div>
     <div id="toast" class="toast"></div>
@@ -268,9 +104,7 @@
                 var toast = document.getElementById('toast');
                 toast.textContent = msg;
                 toast.style.display = 'block';
-                setTimeout(function() {
-                    toast.style.display = 'none';
-                }, 2000);
+                setTimeout(function() { toast.style.display = 'none'; }, 2000);
             }
 
             async function initCloud() {
@@ -386,22 +220,23 @@
                 }
                 var tbody = document.getElementById('customerList');
                 if (customers.length === 0) {
-                    tbody.innerHTML = '……
+                    tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
                     return;
                 }
-                var html = '';
+                var rows = [];
                 for (var i = 0; i < customers.length; i++) {
                     var c = customers[i];
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
-                    html += '……
+                    rows.push('<tr>');
+                    rows.push('<td>' + escapeHtml(c.shopName) + '</td>');
+                    rows.push('<td>' + escapeHtml(c.address) + '</td>');
+                    rows.push('<td>' + escapeHtml(c.phone) + '</td>');
+                    rows.push('<td>' + escapeHtml(c.category) + '</td>');
+                    rows.push('<td>' + escapeHtml(c.remark || '') + '</td>');
+                    rows.push('<td>' + new Date(c.createdAt).toLocaleString() + '</td>');
+                    rows.push('<td>' + escapeHtml(salesMap.get(c.salesId) || c.salesId) + '</td>');
+                    rows.push('</tr>');
                 }
-                tbody.innerHTML = html;
+                tbody.innerHTML = rows.join('');
             }
 
             document.getElementById('customerForm').addEventListener('submit', async function(e) {
@@ -507,6 +342,16 @@
             function logout() {
                 localStorage.clear();
                 window.location.href = 'index.html';
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
             }
 
             window.logout = logout;
